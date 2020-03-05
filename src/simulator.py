@@ -105,6 +105,18 @@ class State:
 
 
 class TransitionType:
+    """
+        Defines the Transition types betweens States.
+        The change in amplitudes should not be Linear all the time.
+        There are a number of easing types (i.e. Quadratic, Cubic, 
+        Sine, Exponential, Elastic...) that contributes to the "realism"
+        of the system, as all isn't "perfectly" Linear in the real world.
+
+        type: str
+            One of the predefined easing function.
+            #TODO
+
+    """
     type: str
 
     def __init__(self, type: str) -> None:
@@ -123,6 +135,26 @@ class TransitionType:
 
 
 class RealtimeSystem:
+    """
+        realtime_tick: int
+            Ticks in <milliseconds> before registering a sample and adding
+            `dt` to the simulation's time.
+
+        dt_per_sample: int
+            Simulated time step between each sample in the simulation.
+            This variable will likely be in <seconds>.
+
+        transition_type: TransitionType
+            The TransitionType between states. (e.g. EaseInOutQuad... etc.)
+
+        noise: Noise
+            The general Noise that is present for the entire system's samples.
+            This simulates general noise such as Temperature, Humidity  as well
+            as other factors that interfer with the sensors' readings.
+
+        states: List[State]
+            The list of States that this system emulates. 
+    """
     realtime_tick: int
     dt_per_sample: int
     transition_type: TransitionType

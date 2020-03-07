@@ -23,3 +23,76 @@ Le but de ce TER est donc d'automatiser la détection de ces anomalies automatiq
 Afin de détecter ces anomalies, nous voudrions convertir ces graphes en images ou vidéos et appliquer des algorithmes de classification d'image dans lesquels les réseaux de neurones sont particulièrement efficaces. Cela permettrait d'utiliser le même programme pour traiter des données complètement différentes sans devoir le réentraîner pour chaque jeu de données.
 
 La première étape que nous nous sommes fixés est de créer un outil permettant de génerer des graphes ressemblant aux graphes utilisés par l'entreprise. Cet outil devrait être modulaire pour permettre de simuler toutes les situations auxquelles l'entreprise est confrontée, incluant les anomalies. Il faut donc réfléchir à des paramètres permettant de varier le temps entre les "cycles" de pression, le nombre d'anomalies, leur type, le bruit, etc.
+
+#### 06/03/2020
+
+
+
+Discussion sur la conception du logiciel de simulation.
+
+La question principale: Est-ce que le logiciel génerera des graphes réalistes tout seul pour entraîner le modèle de machine learning, ou bien est-ce que le logiciel prendra en entrée les fichiers .csv fournis à M. Formenti par l'entreprise et qui correspondent aux relevés des senseurs.
+
+En attendant, nous avons réfléchi à la conception du logiciel en partant du premier point. Nous voulons partir sur une architecture à deux temps: un programme qui génère des fichiers .json qui correspondent aux informations d'un graphe, et un autre logiciel qui lit ces .json et les transforme en graphes.
+
+La structure des fichiers .json est la suivante:
+
+		realtime_tick: int
+            Ticks in <milliseconds> before registering a sample and adding
+            `dt` to the simulation's time.
+        dt_per_sample: int
+            Simulated time step between each sample in the simulation.
+            This variable will likely be in <seconds>.
+        transition_type: TransitionType
+            The TransitionType between states. (e.g. EaseInOutQuad... etc.)
+        noise: Noise
+            The general Noise that is present for the entire system's samples.
+            This simulates general noise such as Temperature, Humidity  as well
+            as other factors that interfer with the sensors' readings.
+        states: List[State]
+            The list of States that this system emulates.
+            Attributes: 
+	            state: str [Active / Rest State]
+			    duration: int [Duration of state]
+			    amplitude: int [Avg. amplitude of state]
+			    impulsions: List[Impulsion]
+			    	Impulsion attributes:
+					    type: str  [ex: "Dent"]
+					    fire_time: int [How many seconds into the state is the impulsion supposed to start]
+					    duration: int [Duration of impulsion]
+
+Exemple:
+
+	{
+		"realtime_tick": 42,
+		"dt_per_sample": 60,
+		"transition_type": "EaseInOut",
+		"noise": "gaussian",
+		"states": [
+					{
+						"state": "active_state",
+						"duration": 24,
+						"amplitude": 100,
+						"impulsions" : [
+							{
+								"type": "dent",
+								"fire_time": 3,
+								"duration": 5
+							},
+							{
+								"type": "dent",
+								"fire_time": 14,
+								"duration": 2
+							},
+						]
+					},
+					{
+						"state": "rest_state",
+						"duration": 24,
+						"amplitude": 100,
+						"impulsions" : []
+					},
+				]
+	}
+
+Nous avons choisi de représenter les graphes sous la forme d'une suite d'états (actif, puis repos, puis actif...) avec chacun une durée et une amplitude moyenne.
+Certains paramètres son globaux et s'appliquent à tous les états d'un graphe: la fonction de bruit (bruit "normal" ou bruit aléatoire par exemple, qui dévie un peu de l'amplitude moyenne), ainsi que le type de transition entre les états (par exemple pour décider à quel point la transition entre les deux états est abrupte). Afin de simuler les anomalies (graves ou non), nous avons implémenté des "impulsions" qui sont des grandes variations de l'amplitude. Chaque type d'impulsion déformera différemment le signal pour simuler une anomalie différente.

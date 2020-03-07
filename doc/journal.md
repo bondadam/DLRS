@@ -24,7 +24,7 @@ Afin de détecter ces anomalies, nous voudrions convertir ces graphes en images 
 
 La première étape que nous nous sommes fixés est de créer un outil permettant de génerer des graphes ressemblant aux graphes utilisés par l'entreprise. Cet outil devrait être modulaire pour permettre de simuler toutes les situations auxquelles l'entreprise est confrontée, incluant les anomalies. Il faut donc réfléchir à des paramètres permettant de varier le temps entre les "cycles" de pression, le nombre d'anomalies, leur type, le bruit, etc.
 
-#### 06/03/2020
+### 06/03/2020
 
 
 
@@ -96,3 +96,5 @@ Exemple:
 
 Nous avons choisi de représenter les graphes sous la forme d'une suite d'états (actif, puis repos, puis actif...) avec chacun une durée et une amplitude moyenne.
 Certains paramètres son globaux et s'appliquent à tous les états d'un graphe: la fonction de bruit (bruit "normal" ou bruit aléatoire par exemple, qui dévie un peu de l'amplitude moyenne), ainsi que le type de transition entre les états (par exemple pour décider à quel point la transition entre les deux états est abrupte). Afin de simuler les anomalies (graves ou non), nous avons implémenté des "impulsions" qui sont des grandes variations de l'amplitude. Chaque type d'impulsion déformera différemment le signal pour simuler une anomalie différente.
+
+L'intérêt de ce système à deux temps est que le programme qui génère les fichiers .json peut lui-même prendre en compte des probabilités pour décider d'à quel moment insérer une anomalie, ou à quel moment arrêter un état. On peut génerer autant de graphes que l'on veut avec le type d'anomalie désiré, et avoir un dataset équilibré. 

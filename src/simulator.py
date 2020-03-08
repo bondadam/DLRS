@@ -1,27 +1,26 @@
 import json
 from typing import Any, List, TypeVar, Callable, Type, cast
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 T = TypeVar("T")
 
 
 def from_str(x: Any) -> str:
-    assert isinstance(x, str)
     return x
 
 
 def from_int(x: Any) -> int:
-    assert isinstance(x, int) and not isinstance(x, bool)
     return x
 
 
 def from_list(f: Callable[[Any], T], x: Any) -> List[T]:
-    assert isinstance(x, list)
     return [f(y) for y in x]
 
 
 def to_class(c: Type[T], x: Any) -> dict:
-    assert isinstance(x, c)
     return cast(Any, x).to_dict()
 
 
@@ -32,6 +31,11 @@ class Noise:
     def __init__(self, type: str, amplitude: int) -> None:
         self.type = type
         self.amplitude = amplitude
+
+    def apply(self, x):
+        if self.type.lower() == "gaussian":
+            return np.random.normal() * self.amplitude + x
+        return x
 
     @staticmethod
     def from_dict(obj: Any) -> 'Noise':
@@ -85,6 +89,11 @@ class State:
         self.amplitude = amplitude
         self.impulsions = impulsions
 
+    def get_samples(self, dt_per_sample):
+        samples_count = self.duration // dt_per_sample
+        Y = np.full((samples_count,), self.amplitude)
+        return Y
+
     @staticmethod
     def from_dict(obj: Any) -> 'State':
         assert isinstance(obj, dict)
@@ -114,7 +123,6 @@ class TransitionType:
 
         type: str
             One of the predefined easing function.
-            #TODO
 
     """
     type: str
@@ -168,6 +176,27 @@ class RealtimeSystem:
         self.noise = noise
         self.states = states
 
+    def total_time(self):
+        """
+            The sum of State durations in <seconds>.
+        """
+        return sum(map(lambda s: s.duration, self.states))
+
+    def data(self):
+        X = np.arange(0, self.total_time(), self.dt_per_sample)
+        Y = np.concatenate([s.get_samples(self.dt_per_sample) for s in self.states], axis=None)
+        Y = np.vectorize(self.noise.apply)(Y)
+        return X, Y
+    
+    def render(self, color='red'):
+        X, Y = rlts.data()
+        ax = sns.lineplot(X, Y, color=color)
+        ax.set_title("Realtime System")
+        L = ax.lines[-1]
+        x1 = L.get_xydata()[:,0]
+        y1 = L.get_xydata()[:,1]
+        ax.fill_between(x1,y1, color=color, alpha=0.2)
+
     @staticmethod
     def from_dict(obj: Any) -> 'RealtimeSystem':
         assert isinstance(obj, dict)
@@ -190,4 +219,26 @@ class RealtimeSystem:
 
 
 if __name__ == "__main__":
-    pass
+    realtime_tick = 200 # milliseconds, (Animation: TODO)
+    delta_time_per_sample = 20  # seconds
+    transition = TransitionType("")  # No transitions, (First transition: TODO)
+    noise = Noise("gaussian", 0.5)  # Normal function (Gaussian noise)
+    # 3 states, no impulses (Impulses: TODO)
+    states = [State("Rest", 1200, 5, []), State("Active", 3600, 20, []), State("Rest", 1200, 5, [])]
+
+    rlts = RealtimeSystem(realtime_tick,
+                          delta_time_per_sample,
+                          transition,
+                          noise,
+                          states)
+    rlts.render(color='blue')
+
+    states = [State("Rest", 1200, 5, []), State("Active", 3600, 10, []), State("Rest", 1200, 5, [])]
+    rlts = RealtimeSystem(realtime_tick,
+                          delta_time_per_sample,
+                          transition,
+                          noise,
+                          states)
+    rlts.render(color='red')
+    plt.show()
+    print(rlts.to_dict())

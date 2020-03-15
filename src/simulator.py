@@ -1,5 +1,6 @@
 import json
 from typing import Any, List, TypeVar, Callable, Type, cast
+from enum import Enum, auto
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -56,11 +57,13 @@ class Impulsion:
     type: str
     fire_time: int
     duration: int
+    amplitude: int
 
-    def __init__(self, type: str, fire_time: int, duration: int) -> None:
+    def __init__(self, type: str, fire_time: int, duration: int, amplitude: int) -> None:
         self.type = type
         self.fire_time = fire_time
         self.duration = duration
+        self.amplitude = amplitude
 
     @staticmethod
     def from_dict(obj: Any) -> 'Impulsion':
@@ -68,14 +71,57 @@ class Impulsion:
         type = from_str(obj.get("type"))
         fire_time = from_int(obj.get("fire_time"))
         duration = from_int(obj.get("duration"))
-        return Impulsion(type, fire_time, duration)
+        amplitude = from_int(obj.get("amplitude"))
+        return Impulsion(type, fire_time, duration, amplitude)
 
     def to_dict(self) -> dict:
         result: dict = {}
         result["type"] = from_str(self.type)
         result["fire_time"] = from_int(self.fire_time)
         result["duration"] = from_int(self.duration)
+        result["amplitude"] = from_int(amplitude)
         return result
+    
+    def apply(self, samples, dt_per_sample):
+        """
+            Applies an impulsion (large variation in amplitude) to the given array of samples
+            starting at fire_time and ending after duration 
+        """
+        impulsion_start_sample = self.fire_time // dt_per_sample
+        impulsion_end_sample = ((self.fire_time + self.duration) // dt_per_sample)
+        ## TODO: check that the given values are correct (ie 0 < fire_time < state_total_time)
+        affected_samples = samples[impulsion_start_sample : impulsion_end_sample]
+        modified_samples = self._apply_func(affected_samples)
+        all_samples = np.concatenate((samples[:impulsion_start_sample], modified_samples, samples[impulsion_end_sample:]))
+        return all_samples
+
+
+    def _apply_func(self, array):
+        return self._type_as_func(array)
+
+    def _type_as_func(self, t):
+        impulsion_type = self.type.lower()
+        if impulsion_type == "down_tooth":
+            return self.down_tooth(t)
+        elif impulsion_type == "up_tooth":
+            return self.up_tooth(t)
+        else:
+            return self.down_tooth(t)
+    
+    def down_tooth(self,t):
+        linear_coefficient = ((t[0] - self.amplitude) * 2) / len(t)
+        halfway_point = len(t)//2
+        modified_array = []
+        for i in range(len(t)):
+            if i <= halfway_point:
+                new_value = t[0] - (i * linear_coefficient)
+            else:
+                new_value = t[0] - (len(t) - i) * linear_coefficient
+            modified_array.append(new_value) 
+        return np.array(modified_array)
+
+    def up_tooth(t):
+        return t
 
 
 class State:
@@ -367,7 +413,14 @@ class RealtimeSystem:
 
     def data(self):
         X = np.arange(0, self.total_time(), self.dt_per_sample)
-        Y = self.transition_type.apply([s.get_samples(self.dt_per_sample) for s in self.states])
+        Y = [s.get_samples(self.dt_per_sample) for s in self.states]
+        ## Always apply impulses after transitions or the transitions will erase impulsions too close to
+        ## the beginning or end of a state
+        Y = self.transition_type.apply(Y)
+        for i in range(len(self.states)):
+            if len(self.states[i].impulsions) > 0:
+                for impulsion in self.states[i].impulsions:
+                    Y[i] = impulsion.apply(Y[i], self.dt_per_sample)
         Y = np.concatenate(Y, axis=None)
         Y = np.vectorize(self.noise.apply)(Y)
         return X, Y
@@ -408,11 +461,10 @@ class RealtimeSystem:
 if __name__ == "__main__":
     realtime_tick = 200 # milliseconds, (Animation: TODO)
     delta_time_per_sample = 10  # seconds
-    # FIXME: Transitions are not fluid.
-    transition = TransitionType("bounce", 50)
-    noise = Noise("gaussian", 0.3)  # Normal function (Gaussian noise)
-    # 3 states, no impulses (Impulses: TODO)
-    states = [State("Rest", 1200, 5, []), State("Active", 3600, 20, []), State("Rest", 1200, 5, [])]
+    transition = TransitionType("quad", 50)
+    noise = Noise("gaussian", 0)  # Normal function (Gaussian noise)
+    # 3 states, no impulses 
+    states = [State("Rest", 1200, 5, [Impulsion("down_tooth", 30, 100, 0)]), State("Active", 3600, 200, [Impulsion("down_tooth", 30, 80, 50), Impulsion("down_tooth", 1600, 800, 0), Impulsion("down_tooth", 2600, 200, 150)]),State("Rest", 1200, 5, [])]
 
     rlts = RealtimeSystem(realtime_tick,
                           delta_time_per_sample,

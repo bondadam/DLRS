@@ -3,6 +3,7 @@ from typing import Any, List, TypeVar, Callable, Type, cast
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 T = TypeVar("T")
@@ -89,8 +90,17 @@ class State:
         self.amplitude = amplitude
         self.impulsions = impulsions
 
+    def total_samples(self, dt_per_sample):
+        """
+            Total samples of the current state == State's Duration // System's Delta Time
+        """
+        return self.duration // dt_per_sample
+
     def get_samples(self, dt_per_sample):
-        samples_count = self.duration // dt_per_sample
+        """
+            Numpy array containing all the state's samples.
+        """
+        samples_count = self.total_samples(dt_per_sample)
         Y = np.full((samples_count,), self.amplitude)
         return Y
 
@@ -123,22 +133,195 @@ class TransitionType:
 
         type: str
             One of the predefined easing function.
+            Easing Functions Types: `quad`, `cubic`, `quartic`, `sine`, `circular`, `exponential`, `elastic`,
+            `back`, `bounce`.
 
+            These functions were fetched from: https://github.com/semitable/easing-functions
+        
+        samples_per_side: int
+            How many samples to take from each State's array of samples endpoints.
+            e.g:
+                If we have 3 states and the array holding their samples is
+                [[5,5,5,5,5,5], [20,20,20,20,20,20], [10,10,10,10,10,10]] and samples_per_side is 3
+                then the Transition Function will interpolate the following arrays:
+
+                [[5, 5, 5, 5, 5, 5], [20, 20, 20, 20, 20, 20], [10, 10, 10, 10, 10, 10]]
+                           _____________________  ________________________
+                
+                => [[5, 5, 5, 20, 20, 20], [20, 20, 20, 10, 10, 10]]
     """
     type: str
 
-    def __init__(self, type: str) -> None:
+    def __init__(self, type: str, samples_per_side: int) -> None:
         self.type = type
+        self.samples_per_side = samples_per_side
+
+    def apply(self, array_of_samples):
+        """
+            Applies a Transition Function between 2 States given an array `array_of_samples`
+            which contain all samples from all States.
+            If there are less than 2 States' Samples, the given array will be returned.
+        """
+        N = len(array_of_samples)
+        for i in range(N - 1):
+            ## The min function is to avoid giving a number of samples_per_side bigger than the total samples
+            ## of the 2 states we're applying the easing function to.
+            samples_per_side = np.min((self.samples_per_side, len(array_of_samples[i]), len(array_of_samples[i+1])))
+            T = np.concatenate((array_of_samples[i][-samples_per_side:], array_of_samples[i + 1][:samples_per_side]), axis=None)
+            T = self._apply_func(T)
+            array_of_samples[i][- samples_per_side:] = T[: samples_per_side]
+            array_of_samples[i + 1][:samples_per_side] = T[samples_per_side:]
+        return array_of_samples
+
+
+    def _apply_func(self, array):
+        y_end = array[-1]
+        y_start = array[0]
+        t = np.arange(0, len(array) + 1) / len(array)
+        t = t[1:]
+        x = np.vectorize(self._type_as_func)(t)
+        return y_end * x + y_start * (1 - x)
+
+    def _type_as_func(self, t):
+        ease = self.type.lower()
+        if ease in ["quad"]:
+            return TransitionType.quadEaseInOut(t)
+        elif ease in ["cubic"]:
+            return TransitionType.cubicEaseInOut(t)
+        elif ease in ["quartic"]:
+            return TransitionType.quarticEaseInOut(t)
+        elif ease in ["sine"]:
+            return TransitionType.sineEaseInOut(t)
+        elif ease in ["circular"]:
+            return TransitionType.circularEaseInOut(t)
+        elif ease in ["elastic"]:
+            return TransitionType.elasticEaseInOut(t)
+        elif ease in ["exponential"]:
+            return TransitionType.exponentialEaseInOut(t)
+        elif ease in ["back"]:
+            return TransitionType.backEaseInOut(t)
+        elif ease in ["bounce"]:
+            return TransitionType.bounceEaseInOut(t)
+        else:
+            return TransitionType.linearInOut(t)
+    
+    @staticmethod
+    def linearInOut(t):
+        return t
+
+    ### Quadratic
+
+    @staticmethod
+    def quadEaseInOut(t):
+        if t < 0.5:
+            return 2 * t * t
+        return (-2 * t * t) + (4 * t) - 1
+        
+    ### Cubic
+
+    @staticmethod
+    def cubicEaseInOut(t):
+        if t < 0.5:
+            return 4 * t * t * t
+        p = 2 * t - 2
+        return 0.5 * p * p * p + 1
+
+    ### Quartic
+
+    @staticmethod
+    def quarticEaseInOut(t):
+        if t < 0.5:
+            return 8 * t * t * t * t
+        p = t - 1
+        return - 8 * p * p * p * p + 1
+    
+    ### Sine
+
+    @staticmethod
+    def sineEaseInOut(t):
+        return 0.5 * (1 - np.cos(t * np.pi))
+
+    ### Circular
+
+    @staticmethod
+    def circularEaseInOut(t):
+        if t < 0.5:
+            return 0.5 * (1 - np.sqrt(1 - 4 * (t * t)))
+        return 0.5 * (np.sqrt(-((2 * t) - 3) * ((2 * t) - 1)) + 1)
+
+    ### Exponential
+
+    @staticmethod
+    def exponentialEaseInOut(t):
+        if t == 0 or t == 1:
+            return t
+        if t < 0.5:
+            return 0.5 * np.pow(2, (20 * t) - 10)
+        return - 0.5 * np.pow(2, (-20 * t) + 10) + 1
+        
+    ### Elastic
+
+    @staticmethod
+    def elasticEaseInOut(t):
+        if t < 0.5:
+            return (
+                0.5
+                * np.sin(13 * np.pi / 2 * (2 * t))
+                * np.pow(2, 10 * ((2 * t) - 1))
+            )
+        return 0.5 * (
+            np.sin(-13 * np.pi / 2 * ((2 * t - 1) + 1))
+            * np.pow(2, -10 * (2 * t - 1))
+            + 2
+        )
+    
+    ### Back
+
+    @staticmethod
+    def backEaseInOut(t):
+        if t < 0.5:
+            p = 2 * t
+            return 0.5 * (p * p * p - p * np.sin(p * np.pi))
+
+        p = 1 - (2 * t - 1)
+
+        return 0.5 * (1 - (p * p * p - p * np.sin(p * np.pi))) + 0.5
+
+    ### Bounce
+
+
+    @staticmethod
+    def _bounceEaseIn(t):
+        return 1 - TransitionType._bounceEaseOut(1 - t)
+
+
+    @staticmethod
+    def _bounceEaseOut(t):
+        if t < 4 / 11:
+            return 121 * t * t / 16
+        elif t < 8 / 11:
+            return (363 / 40.0 * t * t) - (99 / 10.0 * t) + 17 / 5.0
+        elif t < 9 / 10:
+            return (4356 / 361.0 * t * t) - (35442 / 1805.0 * t) + 16061 / 1805.0
+        return (54 / 5.0 * t * t) - (513 / 25.0 * t) + 268 / 25.0
+
+    @staticmethod
+    def bounceEaseInOut(t):
+        if t < 0.5:
+            return 0.5 * TransitionType._bounceEaseIn(t * 2)
+        return 0.5 * TransitionType._bounceEaseOut(t * 2 - 1) + 0.5
 
     @staticmethod
     def from_dict(obj: Any) -> 'TransitionType':
         assert isinstance(obj, dict)
         type = from_str(obj.get("type"))
-        return TransitionType(type)
+        samples_per_side = from_str(obj.get("samples_per_side"))
+        return TransitionType(type, samples_per_side)
 
     def to_dict(self) -> dict:
         result: dict = {}
         result["type"] = from_str(self.type)
+        result["samples_per_side"] = from_int(self.samples_per_side)
         return result
 
 
@@ -184,9 +367,13 @@ class RealtimeSystem:
 
     def data(self):
         X = np.arange(0, self.total_time(), self.dt_per_sample)
-        Y = np.concatenate([s.get_samples(self.dt_per_sample) for s in self.states], axis=None)
+        Y = self.transition_type.apply([s.get_samples(self.dt_per_sample) for s in self.states])
+        Y = np.concatenate(Y, axis=None)
         Y = np.vectorize(self.noise.apply)(Y)
         return X, Y
+    
+    def to_csv(self):
+        pass
     
     def render(self, color='red'):
         X, Y = rlts.data()
@@ -220,9 +407,10 @@ class RealtimeSystem:
 
 if __name__ == "__main__":
     realtime_tick = 200 # milliseconds, (Animation: TODO)
-    delta_time_per_sample = 20  # seconds
-    transition = TransitionType("")  # No transitions, (First transition: TODO)
-    noise = Noise("gaussian", 0.5)  # Normal function (Gaussian noise)
+    delta_time_per_sample = 10  # seconds
+    # FIXME: Transitions are not fluid.
+    transition = TransitionType("bounce", 50)
+    noise = Noise("gaussian", 0.3)  # Normal function (Gaussian noise)
     # 3 states, no impulses (Impulses: TODO)
     states = [State("Rest", 1200, 5, []), State("Active", 3600, 20, []), State("Rest", 1200, 5, [])]
 
@@ -232,13 +420,4 @@ if __name__ == "__main__":
                           noise,
                           states)
     rlts.render(color='blue')
-
-    states = [State("Rest", 1200, 5, []), State("Active", 3600, 10, []), State("Rest", 1200, 5, [])]
-    rlts = RealtimeSystem(realtime_tick,
-                          delta_time_per_sample,
-                          transition,
-                          noise,
-                          states)
-    rlts.render(color='red')
     plt.show()
-    print(rlts.to_dict())

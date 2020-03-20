@@ -99,8 +99,7 @@ Certains paramètres son globaux et s'appliquent à tous les états d'un graphe:
 
 L'intérêt de ce système à deux temps est que le programme qui génère les fichiers .json peut lui-même prendre en compte des probabilités pour décider d'à quel moment insérer une anomalie, ou à quel moment arrêter un état. On peut génerer autant de graphes que l'on veut avec le type d'anomalie désiré, et avoir un dataset équilibré.
 
-20/03/2020
-
+###20/03/2020
 
 Discussion avec M. Formenti pour constater notre avancement et discuter de la marche à suivre.
 
@@ -114,19 +113,19 @@ Série d'exemples pour illustrer ces deux fonctions:
 
 ![Graphe 1](https://i.imgur.com/5zNGcO2.png)
 
-offset = 0, scale = 0 (default), noise = 0. Chaque "dent" est une impulsion.
+		ci-dessus: offset = 0, scale = 0 (default), noise = 0. Chaque "dent" est une impulsion.
 
 ![Graphe 2](https://i.imgur.com/Dvgafj2.png)
 
-offset = 0, scale = 2000, noise = 0
+		ci-dessus: offset = 0, scale = 2000, noise = 0
 
 ![Graphe 3](https://i.imgur.com/NxLtvLR.png)
 
-offset = 2000, scale = 0, noise = 0
+		ci-dessus: offset = 2000, scale = 0, noise = 0
 
 ![Graphe 4](https://i.imgur.com/gafReV3.png)
 
-offset = 2000, scale = 2000, noise = 5
+		ci-dessus: offset = 2000, scale = 2000, noise = 5
 
 Le traitement du ymax/ymin de chaque graphe n'est plus automatisé par matplotlib mais calculé à partir de toutes les données en entrée, sans limiter par scale et offset, pour que le même graphe avec des valeurs différentes de scale et offset aie toujours la même échelle.
 

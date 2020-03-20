@@ -97,4 +97,44 @@ Exemple:
 Nous avons choisi de représenter les graphes sous la forme d'une suite d'états (actif, puis repos, puis actif...) avec chacun une durée et une amplitude moyenne.
 Certains paramètres son globaux et s'appliquent à tous les états d'un graphe: la fonction de bruit (bruit "normal" ou bruit aléatoire par exemple, qui dévie un peu de l'amplitude moyenne), ainsi que le type de transition entre les états (par exemple pour décider à quel point la transition entre les deux états est abrupte). Afin de simuler les anomalies (graves ou non), nous avons implémenté des "impulsions" qui sont des grandes variations de l'amplitude. Chaque type d'impulsion déformera différemment le signal pour simuler une anomalie différente.
 
-L'intérêt de ce système à deux temps est que le programme qui génère les fichiers .json peut lui-même prendre en compte des probabilités pour décider d'à quel moment insérer une anomalie, ou à quel moment arrêter un état. On peut génerer autant de graphes que l'on veut avec le type d'anomalie désiré, et avoir un dataset équilibré. 
+L'intérêt de ce système à deux temps est que le programme qui génère les fichiers .json peut lui-même prendre en compte des probabilités pour décider d'à quel moment insérer une anomalie, ou à quel moment arrêter un état. On peut génerer autant de graphes que l'on veut avec le type d'anomalie désiré, et avoir un dataset équilibré.
+
+20/03/2020
+
+
+Discussion avec M. Formenti pour constater notre avancement et discuter de la marche à suivre.
+
+Le programme qui interprête le json vers une image de graphe implémente bien les impulsions, les différentes transitions possibles, et les suites d'état. Toute la surface "en dessous" de la ligne est coloriée avec opacité 1 de la même couleur pour faciliter le traitement par des algorithmes de traitement d'image.
+
+Afin de pouvoir alimenter notre modèle avec un maximum de graphes (par exemple, un qui représente la situation entre deux anomalies), nous avons implémentés deux nouvelles options : Scale et Offset.
+
+L'offset décide de la "position" de départ dans le temps, le scale décide de combien de secondes afficher à la fois.
+
+Série d'exemples pour illustrer ces deux fonctions:
+
+![Graphe 1](https://i.imgur.com/5zNGcO2.png)
+
+offset = 0, scale = 0 (default), noise = 0. Chaque "dent" est une impulsion.
+
+![Graphe 2](https://i.imgur.com/Dvgafj2.png)
+
+offset = 0, scale = 2000, noise = 0
+
+![Graphe 3](https://i.imgur.com/NxLtvLR.png)
+
+offset = 2000, scale = 0, noise = 0
+
+![Graphe 4](https://i.imgur.com/gafReV3.png)
+
+offset = 2000, scale = 2000, noise = 5
+
+Le traitement du ymax/ymin de chaque graphe n'est plus automatisé par matplotlib mais calculé à partir de toutes les données en entrée, sans limiter par scale et offset, pour que le même graphe avec des valeurs différentes de scale et offset aie toujours la même échelle.
+
+Avec cette technique de scale/offset, on peut génerer toutes les images individuelles d'un graphe sous forme de stream comme celui qui est surveillé par l'entreprise, en donnant à chaque fois le même graphe en entrée avec un offset incrémenté.
+
+Comme l'entreprise a besoin que la détection d'anomalie se fasse de manière quasi-instantanée, nous voulons choisir des algorithmes d'apprentissage profond qui baissent le nombre d'informations dans l'image; par exemple en générant une image composée de 10 "gros" pixels à partir de l'image de base du graphe, avec chacun deux couleurs possibles: une couleur "remplie" et une "vide".
+
+Les prochains objectifs:
+* Réaliser le programme qui génère les json (en se servant de probabilités pour simuler la fréquence des anomalies)
+* Comparer les modèles de Convolutional Neural Networks qui permettent de faire de la classification d'images pour trouver le plus adapté
+

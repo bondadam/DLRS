@@ -101,27 +101,23 @@ class Impulsion:
 
     def _type_as_func(self, t):
         impulsion_type = self.type.lower()
-        if impulsion_type == "down_tooth":
-            return self.down_tooth(t)
-        elif impulsion_type == "up_tooth":
-            return self.up_tooth(t)
+        if impulsion_type == "tooth":
+            return self.tooth(t)
         else:
-            return self.down_tooth(t)
+            return self.tooth(t)
     
-    def down_tooth(self,t):
-        linear_coefficient = ((t[0] - self.amplitude) * 2) / len(t)
+    def tooth(self,t):
+        average_amplitude = sum(t)/len(t)
+        linear_coefficient = ((average_amplitude - self.amplitude) * 2) / len(t)
         halfway_point = len(t)//2
         modified_array = []
         for i in range(len(t)):
             if i <= halfway_point:
-                new_value = t[0] - (i * linear_coefficient)
+                new_value = average_amplitude - (i * linear_coefficient)
             else:
-                new_value = t[0] - (len(t) - i) * linear_coefficient
+                new_value = average_amplitude - (len(t) - i) * linear_coefficient
             modified_array.append(new_value) 
         return np.array(modified_array)
-
-    def up_tooth(t):
-        return t
 
 
 class State:
@@ -381,6 +377,19 @@ class RealtimeSystem:
             Simulated time step between each sample in the simulation.
             This variable will likely be in <seconds>.
 
+        scale: int
+            Amount of time to be displayed at one time on the graph.
+            Example: 24hrs of state data, scale = 8hrs -> graph will show values 0 to 8*60*60
+            Value is expected to be in seconds.
+            Default value (No scaling) : 0
+
+        offset: int
+            Display values only after a certain time has elapsed.
+            In other words, the current "position" in time. Can be combined with scale.
+            Example: 24hrs of state data, offset = 3hrs, scale = 8hrs -> graph will show values from 3 * 60² to 8 * 60²
+            Value is expected to be in seconds.
+            Default value (No offset) : 0
+
         transition_type: TransitionType
             The TransitionType between states. (e.g. EaseInOutQuad... etc.)
 
@@ -394,13 +403,17 @@ class RealtimeSystem:
     """
     realtime_tick: int
     dt_per_sample: int
+    scale: int
+    offset: int
     transition_type: TransitionType
     noise: Noise
     states: List[State]
 
-    def __init__(self, realtime_tick: int, dt_per_sample: int, transition_type: TransitionType, noise: Noise, states: List[State]) -> None:
+    def __init__(self, realtime_tick: int, dt_per_sample: int, scale: int, offset: int, transition_type: TransitionType, noise: Noise, states: List[State]) -> None:
         self.realtime_tick = realtime_tick
         self.dt_per_sample = dt_per_sample
+        self.scale = scale
+        self.offset = offset
         self.transition_type = transition_type
         self.noise = noise
         self.states = states
@@ -412,7 +425,7 @@ class RealtimeSystem:
         return sum(map(lambda s: s.duration, self.states))
 
     def data(self):
-        X = np.arange(0, self.total_time(), self.dt_per_sample)
+        X = np.arange(self.offset, self.total_time() if self.scale == 0 else self.offset + self.scale, self.dt_per_sample)
         Y = [s.get_samples(self.dt_per_sample) for s in self.states]
         ## Always apply impulses after transitions or the transitions will erase impulsions too close to
         ## the beginning or end of a state
@@ -423,6 +436,9 @@ class RealtimeSystem:
                     Y[i] = impulsion.apply(Y[i], self.dt_per_sample)
         Y = np.concatenate(Y, axis=None)
         Y = np.vectorize(self.noise.apply)(Y)
+        start_index = int(self.offset / self.dt_per_sample)
+        end_index = int(self.total_time()/ self.dt_per_sample if self.scale == 0 else start_index + self.scale / self.dt_per_sample)
+        Y = Y[start_index:end_index]
         return X, Y
     
     def to_csv(self):
@@ -435,22 +451,32 @@ class RealtimeSystem:
         L = ax.lines[-1]
         x1 = L.get_xydata()[:,0]
         y1 = L.get_xydata()[:,1]
-        ax.fill_between(x1,y1, color=color, alpha=0.2)
+        ## Determine ymax and ymin from the whole input not truncated by scale/offset
+        ## So that the scale doesn't change in the same graph when you change scale/offset
+        ymax = max(np.concatenate([s.get_samples(self.dt_per_sample) for s in self.states],axis=None))
+        ymax = int(1.1 * ymax) ## valeur en dur pour qu'il y ait un peu de marge
+        ymin = min(np.concatenate([s.get_samples(self.dt_per_sample) for s in self.states],axis=None))
+        ax.set(ylim=(ymin,ymax))
+        ax.fill_between(x1,y1, color=color, alpha=1)
 
     @staticmethod
     def from_dict(obj: Any) -> 'RealtimeSystem':
         assert isinstance(obj, dict)
         realtime_tick = from_int(obj.get("realtime_tick"))
         dt_per_sample = from_int(obj.get("dt_per_sample"))
+        scale = from_int(obj.get("scale"))
+        offset = from_int(obj.get("offset"))
         transition_type = TransitionType.from_dict(obj.get("transition_type"))
         noise = Noise.from_dict(obj.get("noise"))
         states = from_list(State.from_dict, obj.get("states"))
-        return RealtimeSystem(realtime_tick, dt_per_sample, transition_type, noise, states)
+        return RealtimeSystem(realtime_tick, dt_per_sample, scale, offset, transition_type, noise, states)
 
     def to_dict(self) -> dict:
         result: dict = {}
         result["realtime_tick"] = from_int(self.realtime_tick)
         result["dt_per_sample"] = from_int(self.dt_per_sample)
+        result["scale"] = from_int(self.scale)
+        result["offset"] = from_int(self.offset)
         result["transition_type"] = to_class(
             TransitionType, self.transition_type)
         result["noise"] = to_class(Noise, self.noise)
@@ -461,13 +487,17 @@ class RealtimeSystem:
 if __name__ == "__main__":
     realtime_tick = 200 # milliseconds, (Animation: TODO)
     delta_time_per_sample = 10  # seconds
+    scale = 2000
+    offset = 2000
     transition = TransitionType("quad", 50)
-    noise = Noise("gaussian", 0)  # Normal function (Gaussian noise)
+    noise = Noise("gaussian", 5)  # Normal function (Gaussian noise)
     # 3 states, no impulses 
-    states = [State("Rest", 1200, 5, [Impulsion("down_tooth", 30, 100, 0)]), State("Active", 3600, 200, [Impulsion("down_tooth", 30, 80, 50), Impulsion("down_tooth", 1600, 800, 0), Impulsion("down_tooth", 2600, 200, 150)]),State("Rest", 1200, 5, [])]
+    states = [State("Rest", 1200, 5, [Impulsion("tooth", 30, 100, 0)]), State("Active", 3600, 200, [Impulsion("tooth", 30, 80, 50), Impulsion("tooth", 1600, 800, 0), Impulsion("tooth", 2600, 200, 150)]),State("Rest", 1200, 5, [])]
 
     rlts = RealtimeSystem(realtime_tick,
                           delta_time_per_sample,
+                          scale,
+                          offset,
                           transition,
                           noise,
                           states)

@@ -4,6 +4,7 @@ from enum import Enum, auto
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.animation as anim
 import pandas as pd
 
 
@@ -164,6 +165,13 @@ class State:
             lambda x: to_class(Impulsion, x), self.impulsions)
         return result
 
+class StateFactory:
+
+    @staticmethod
+    def periodic(n, states, with_random_impulses=False):
+        for i in range(n):
+            states += states
+        return states
 
 class TransitionType:
     """
@@ -417,6 +425,8 @@ class RealtimeSystem:
         self.transition_type = transition_type
         self.noise = noise
         self.states = states
+        self.X = None
+        self.Y = None
 
     def total_time(self):
         """
@@ -425,7 +435,7 @@ class RealtimeSystem:
         return sum(map(lambda s: s.duration, self.states))
 
     def data(self):
-        X = np.arange(self.offset, self.total_time() if self.scale == 0 else self.offset + self.scale, self.dt_per_sample)
+        X = np.arange(0, self.total_time(), self.dt_per_sample)
         Y = [s.get_samples(self.dt_per_sample) for s in self.states]
         ## Always apply impulses after transitions or the transitions will erase impulsions too close to
         ## the beginning or end of a state
@@ -436,16 +446,40 @@ class RealtimeSystem:
                     Y[i] = impulsion.apply(Y[i], self.dt_per_sample)
         Y = np.concatenate(Y, axis=None)
         Y = np.vectorize(self.noise.apply)(Y)
-        start_index = int(self.offset / self.dt_per_sample)
-        end_index = int(self.total_time()/ self.dt_per_sample if self.scale == 0 else start_index + self.scale / self.dt_per_sample)
-        Y = Y[start_index:end_index]
+        self.X = X
+        self.Y = Y
         return X, Y
     
+    def data_scaled(self):
+        if self.X is not None and self.Y is not None:
+            X = np.arange(self.offset, self.offset + self.scale, self.dt_per_sample)
+            start_index = self.offset // self.dt_per_sample
+            end_index = start_index + self.scale // self.dt_per_sample
+            Y = self.Y[start_index:end_index]
+            return X, Y
+    
+    def _process_frame(self, frame):
+        self.offset += self.dt_per_sample
+        self.fig = self.render_scaled()
+        print("{:.2f}% done.".format((frame * 100) / (self.total_time() - self.scale)))
+
+    def generate_frames(self, foldername):
+        self.data() # ensuring that self.Y and self.X are initialized.
+        self.fig = self.render_scaled()
+        frames = np.arange(0, self.total_time() - self.scale, self.dt_per_sample)
+        ani = anim.FuncAnimation(self.fig, self._process_frame, frames=frames, interval=self.realtime_tick)
+        # saving to html format will generate a folder containing all the captured
+        # frames in png format... the generated folder will be named: filename_frames.
+        ani.save(foldername + '.html', writer='mencoder')
+
     def to_csv(self):
         pass
     
     def render(self, color='red'):
-        X, Y = rlts.data()
+        if self.X is not None and self.Y is not None:
+            X, Y = rlts.data()
+        else:
+            X, Y = rlts.data()
         ax = sns.lineplot(X, Y, color=color)
         ax.set_title("Realtime System")
         L = ax.lines[-1]
@@ -457,7 +491,26 @@ class RealtimeSystem:
         ymax = int(1.1 * ymax) ## valeur en dur pour qu'il y ait un peu de marge
         ymin = min(np.concatenate([s.get_samples(self.dt_per_sample) for s in self.states],axis=None))
         ax.set(ylim=(ymin,ymax))
-        ax.fill_between(x1,y1, color=color, alpha=1)
+        ax.fill_between(x1, y1, color=color, alpha=1)
+        return ax.figure
+    
+    def render_scaled(self, color='red'):
+        X, Y = self.data_scaled()
+        ax = sns.lineplot(X, Y, color=color)
+        L = ax.lines[-1]
+        x1 = L.get_xydata()[:,0]
+        y1 = L.get_xydata()[:,1]
+        ## Determine ymax and ymin from the whole input not truncated by scale/offset
+        ## So that the scale doesn't change in the same graph when you change scale/offset
+        ymax = max(np.concatenate([s.get_samples(self.dt_per_sample) for s in self.states],axis=None))
+        ymax = int(1.1 * ymax) ## valeur en dur pour qu'il y ait un peu de marge
+        ymin = min(np.concatenate([s.get_samples(self.dt_per_sample) for s in self.states],axis=None))
+        ax.set(ylim=(ymin,ymax))
+        ax.fill_between(x1, y1, color=color, alpha=1)
+        plt.axis('off')
+        fig = ax.figure
+        fig.tight_layout(pad=0, h_pad=0, w_pad=0, rect=None)
+        return fig
 
     @staticmethod
     def from_dict(obj: Any) -> 'RealtimeSystem':
@@ -485,13 +538,13 @@ class RealtimeSystem:
 
 
 if __name__ == "__main__":
-    realtime_tick = 200 # milliseconds, (Animation: TODO)
-    delta_time_per_sample = 10  # seconds
-    scale = 2000
-    offset = 2000
+    realtime_tick = 10 # milliseconds.
+    delta_time_per_sample = 20  # seconds
+    scale = 2000 # seconds
+    offset = 0 # seconds
     transition = TransitionType("quad", 50)
     noise = Noise("gaussian", 5)  # Normal function (Gaussian noise)
-    # 3 states, no impulses 
+    # 3 states, with impulses 
     states = [State("Rest", 1200, 5, [Impulsion("tooth", 30, 100, 0)]), State("Active", 3600, 200, [Impulsion("tooth", 30, 80, 50), Impulsion("tooth", 1600, 800, 0), Impulsion("tooth", 2600, 200, 150)]),State("Rest", 1200, 5, [])]
 
     rlts = RealtimeSystem(realtime_tick,
@@ -500,6 +553,5 @@ if __name__ == "__main__":
                           offset,
                           transition,
                           noise,
-                          states)
-    rlts.render(color='blue')
-    plt.show()
+                          StateFactory.periodic(5, states))
+    rlts.generate_frames("with_impulses")

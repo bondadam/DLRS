@@ -103,7 +103,7 @@ L'intérêt de ce système à deux temps est que le programme qui génère les f
 
 Discussion avec M. Formenti pour constater notre avancement et discuter de la marche à suivre.
 
-Le programme qui interprête le json vers une image de graphe implémente bien les impulsions, les différentes transitions possibles, et les suites d'état. Toute la surface "en dessous" de la ligne est coloriée avec opacité 1 de la même couleur pour faciliter le traitement par des algorithmes de traitement d'image.
+Le programme qui interprête le json vers une image de graphe implémente bien les impulsions, les différentes transitions possibles, et les suites d'état. Toute la surface "en dessous" de la ligne est coloriée avec opacité 1 de la même couleur pour faciliter le traitement par les algorithmes de classification d'images.
 
 Afin de pouvoir alimenter notre modèle avec un maximum de graphes (par exemple, un qui représente la situation entre deux anomalies), nous avons implémentés deux nouvelles options : Scale et Offset.
 
@@ -131,9 +131,9 @@ Le traitement du ymax/ymin de chaque graphe n'est plus automatisé par matplotli
 
 Avec cette technique de scale/offset, on peut génerer toutes les images individuelles d'un graphe sous forme de stream comme celui qui est surveillé par l'entreprise, en donnant à chaque fois le même graphe en entrée avec un offset incrémenté.
 
-Comme l'entreprise a besoin que la détection d'anomalie se fasse de manière quasi-instantanée, nous voulons choisir des algorithmes d'apprentissage profond qui baissent le nombre d'informations dans l'image; par exemple en générant une image composée de 10 "gros" pixels à partir de l'image de base du graphe, avec chacun deux couleurs possibles: une couleur "remplie" et une "vide".
+Comme l'entreprise a besoin que la détection d'anomalie se fasse de manière quasi-instantanée, nous voulons choisir des algorithmes d'apprentissage Deep Learning qui arrivent en fin de compte à discerner des motifs que le cerveau humain arrive à distinguer trivialement.
 
 Les prochains objectifs:
 * Réaliser le programme qui génère les json (en se servant de probabilités pour simuler la fréquence des anomalies)
-* Comparer les modèles de Convolutional Neural Networks qui permettent de faire de la classification d'images pour trouver le plus adapté
-
+* Générer plusieurs images étiquettées à partir d'un graphe précédemment réalisé qui va nous servir comme données pour entraîner notre modèle.
+* Comparer les modèles de Convolutional Neural Networks qui permettent de faire de la classification d'images pour trouver le plus adapté.

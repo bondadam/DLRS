@@ -261,3 +261,5 @@ dmypy.json
 **/*.html
 **/*.htm
 **/*.png
+
+**/.ipynb_checkpoints/*

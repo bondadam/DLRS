@@ -6,6 +6,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.animation as anim
 import pandas as pd
+from random import randint, random, randrange
+import os
+from shutil import rmtree
+
 
 
 T = TypeVar("T")
@@ -107,7 +111,8 @@ class Impulsion:
         else:
             return self.tooth(t)
     
-    def tooth(self,t):
+    def tooth(self, t):
+        if len(t) == 0: return t
         average_amplitude = sum(t)/len(t)
         linear_coefficient = ((average_amplitude - self.amplitude) * 2) / len(t)
         halfway_point = len(t)//2
@@ -146,6 +151,9 @@ class State:
         samples_count = self.total_samples(dt_per_sample)
         Y = np.full((samples_count,), self.amplitude)
         return Y
+    
+    def copy(self, impulsions):
+        return State(self.state, self.duration, self.amplitude, impulsions)
 
     @staticmethod
     def from_dict(obj: Any) -> 'State':
@@ -169,9 +177,33 @@ class StateFactory:
 
     @staticmethod
     def periodic(n, states, with_random_impulses=False):
+        newStates = []
         for i in range(n):
-            states += states
-        return states
+            newStates += states
+        return newStates
+    
+    @staticmethod
+    def random(n, rest: State, active: State, with_random_impulses=False, random_frequency=0.4, max_impulses_per_state=10):
+        newStates = []
+        states = [rest, active]
+        for i in range(n):
+            if with_random_impulses and random() < (1 - random_frequency):
+                time = lambda x, state: state.duration * x / max_impulses_per_state
+                fire_time = lambda x, state: randrange(time(x, state), time(x+1, state))
+                duration = lambda x, state: randint(0, abs(time(x + 1, state) - fire_time(x, state)))
+                # 0% to 10% of state's amplitude
+                amplitude = lambda state: random() * (state.amplitude * 0.1)
+                r, a = states
+                rMax = randint(0, max_impulses_per_state)
+                aMax = randint(0, max_impulses_per_state)
+                if random() < random_frequency:
+                    r = r.copy([Impulsion("tooth", fire_time(x, r), duration(x, r), amplitude(r)) for x in range(1, rMax+1)])
+                if random() < random_frequency:
+                    a = a.copy([Impulsion("tooth", fire_time(x, a), duration(x, a), amplitude(a)) for x in range(1, aMax+1)])
+                states = [r, a]
+            newStates.extend(states)
+        return newStates
+
 
 class TransitionType:
     """
@@ -451,46 +483,43 @@ class RealtimeSystem:
         return X, Y
     
     def data_scaled(self):
-        if self.X is not None and self.Y is not None:
-            X = np.arange(self.offset, self.offset + self.scale, self.dt_per_sample)
-            start_index = self.offset // self.dt_per_sample
-            end_index = start_index + self.scale // self.dt_per_sample
-            Y = self.Y[start_index:end_index]
-            return X, Y
-    
-    def _process_frame(self, frame):
-        self.offset += self.dt_per_sample
-        self.fig = self.render_scaled()
-        print("{:.2f}% done.".format((frame * 100) / (self.total_time() - self.scale)))
+        _, Y = self.data()
+        X = np.arange(self.offset, self.offset + self.scale, self.dt_per_sample)
+        start_index = self.offset // self.dt_per_sample
+        end_index = start_index + self.scale // self.dt_per_sample
+        Y = self.Y[start_index:end_index]
+        return X, Y
 
     def generate_frames(self, foldername):
-        self.data() # ensuring that self.Y and self.X are initialized.
-        self.fig = self.render_scaled()
-        frames = np.arange(0, self.total_time() - self.scale, self.dt_per_sample)
-        ani = anim.FuncAnimation(self.fig, self._process_frame, frames=frames, interval=self.realtime_tick)
-        # saving to html format will generate a folder containing all the captured
-        # frames in png format... the generated folder will be named: filename_frames.
-        ani.save(foldername + '.html', writer='mencoder')
+        FRAMES_DIR = os.path.join(os.path.abspath(''), "frames", foldername)
+        if os.path.exists(FRAMES_DIR):
+            rmtree(FRAMES_DIR)
+        os.makedirs(FRAMES_DIR)
+        the_end = self.total_time() - self.scale
+        i = 1
+        while self.offset < the_end:
+            plt.clf() # Mandatory call, otherwise the figure will not take into account the scale.
+            self.fig = self.render_scaled()
+            self.fig.savefig(os.path.join(FRAMES_DIR, "{}_{}.png".format(foldername, i)))
+            self.offset += self.dt_per_sample
+            i += 1
+            print("{} frames generation: {:.1f}% done.".format(foldername, (self.offset * 100) / the_end))
+
 
     def to_csv(self):
         pass
     
     def render(self, color='red'):
-        if self.X is not None and self.Y is not None:
-            X, Y = rlts.data()
-        else:
-            X, Y = rlts.data()
+        X, Y = self.data()
         ax = sns.lineplot(X, Y, color=color)
         ax.set_title("Realtime System")
         L = ax.lines[-1]
         x1 = L.get_xydata()[:,0]
         y1 = L.get_xydata()[:,1]
-        ## Determine ymax and ymin from the whole input not truncated by scale/offset
+        ## Determine ymax from the whole input not truncated by scale/offset
         ## So that the scale doesn't change in the same graph when you change scale/offset
-        ymax = max(np.concatenate([s.get_samples(self.dt_per_sample) for s in self.states],axis=None))
-        ymax = int(1.1 * ymax) ## valeur en dur pour qu'il y ait un peu de marge
-        ymin = min(np.concatenate([s.get_samples(self.dt_per_sample) for s in self.states],axis=None))
-        ax.set(ylim=(ymin,ymax))
+        ymax = max(Y) * 1.05 ## valeur en dur pour qu'il y ait un peu de marge
+        ax.set(ylim=(0,ymax))
         ax.fill_between(x1, y1, color=color, alpha=1)
         return ax.figure
     
@@ -502,10 +531,8 @@ class RealtimeSystem:
         y1 = L.get_xydata()[:,1]
         ## Determine ymax and ymin from the whole input not truncated by scale/offset
         ## So that the scale doesn't change in the same graph when you change scale/offset
-        ymax = max(np.concatenate([s.get_samples(self.dt_per_sample) for s in self.states],axis=None))
-        ymax = int(1.1 * ymax) ## valeur en dur pour qu'il y ait un peu de marge
-        ymin = min(np.concatenate([s.get_samples(self.dt_per_sample) for s in self.states],axis=None))
-        ax.set(ylim=(ymin,ymax))
+        ymax = np.max(Y,axis=None) * 1.05
+        ax.set(ylim=(0, ymax))
         ax.fill_between(x1, y1, color=color, alpha=1)
         plt.axis('off')
         fig = ax.figure
@@ -542,10 +569,10 @@ if __name__ == "__main__":
     delta_time_per_sample = 20  # seconds
     scale = 2000 # seconds
     offset = 0 # seconds
-    transition = TransitionType("quad", 50)
-    noise = Noise("gaussian", 5)  # Normal function (Gaussian noise)
+    transition = TransitionType("sine", 5)
+    noise = Noise("gaussian", 0.5)  # Normal function (Gaussian noise)
     # 3 states, with impulses 
-    states = [State("Rest", 1200, 5, [Impulsion("tooth", 30, 100, 0)]), State("Active", 3600, 200, [Impulsion("tooth", 30, 80, 50), Impulsion("tooth", 1600, 800, 0), Impulsion("tooth", 2600, 200, 150)]),State("Rest", 1200, 5, [])]
+    states = [State("Rest", 1200, 10, []), State("Active", 1200, 50,[])]
 
     rlts = RealtimeSystem(realtime_tick,
                           delta_time_per_sample,
@@ -553,5 +580,16 @@ if __name__ == "__main__":
                           offset,
                           transition,
                           noise,
-                          StateFactory.periodic(5, states))
-    rlts.generate_frames("with_impulses")
+                          StateFactory.random(5, states[0], states[1], with_random_impulses=True, max_impulses_per_state=5))
+
+    rlts.generate_frames("stable")
+
+    rlts = RealtimeSystem(realtime_tick,
+                          delta_time_per_sample,
+                          scale,
+                          offset,
+                          transition,
+                          noise,
+                          StateFactory.random(5, states[0], states[1], with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
+
+    rlts.generate_frames("malfunction")

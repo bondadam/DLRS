@@ -99,7 +99,7 @@ Certains paramètres son globaux et s'appliquent à tous les états d'un graphe:
 
 L'intérêt de ce système à deux temps est que le programme qui génère les fichiers .json peut lui-même prendre en compte des probabilités pour décider d'à quel moment insérer une anomalie, ou à quel moment arrêter un état. On peut génerer autant de graphes que l'on veut avec le type d'anomalie désiré, et avoir un dataset équilibré.
 
-###20/03/2020
+### 20/03/2020
 
 Discussion avec M. Formenti pour constater notre avancement et discuter de la marche à suivre.
 
@@ -137,3 +137,20 @@ Les prochains objectifs:
 * Réaliser le programme qui génère les json (en se servant de probabilités pour simuler la fréquence des anomalies)
 * Générer plusieurs images étiquettées à partir d'un graphe précédemment réalisé qui va nous servir comme données pour entraîner notre modèle.
 * Comparer les modèles de Convolutional Neural Networks qui permettent de faire de la classification d'images pour trouver le plus adapté.
+
+
+### 09/04/2020
+
+Le programme qui génère les JSON a un début d'implémentation dans la classe StateFactory.
+
+Nous avons décidé d'utiliser Jupyter Notebook pour faciliter le travail sur TensorFlow vu que cet outil est spécialement utilisé pour les tâches de classifications, de visualizations, d'analyses et de prise de notes sans devoir ré-executer le fichier.
+
+Nous générons des frames du même graphe à des intervalles réguliers définis pour pouvoir simuler les frames d'un graphe qui défilent en temps réel sur l'écran.
+
+#### Exemple
+
+##### Frame 1
+![Frame 1](https://i.imgur.com/uZYpzWs.png)
+
+##### Frame 35
+![Frame 1](https://i.imgur.com/UiJ5u22.png)

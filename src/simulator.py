@@ -187,19 +187,18 @@ class StateFactory:
         newStates = []
         states = [rest, active]
         for i in range(n):
-            if with_random_impulses and random() < (1 - random_frequency):
+            if with_random_impulses:
                 time = lambda x, state: state.duration * x / max_impulses_per_state
                 fire_time = lambda x, state: randrange(time(x, state), time(x+1, state))
-                duration = lambda x, state: randint(0, abs(time(x + 1, state) - fire_time(x, state)))
+                duration = lambda x, state: randint(0, abs(randint(1,2) * time(x + 1, state) - fire_time(x, state)))
                 # 0% to 10% of state's amplitude
                 amplitude = lambda state: random() * (state.amplitude * 0.1)
                 r, a = states
                 rMax = randint(0, max_impulses_per_state)
                 aMax = randint(0, max_impulses_per_state)
                 if random() < random_frequency:
-                    r = r.copy([Impulsion("tooth", fire_time(x, r), duration(x, r), amplitude(r)) for x in range(1, rMax+1)])
-                if random() < random_frequency:
-                    a = a.copy([Impulsion("tooth", fire_time(x, a), duration(x, a), amplitude(a)) for x in range(1, aMax+1)])
+                    r = r.copy([Impulsion("tooth", fire_time(x, r), duration(x, r), amplitude(r)) for x in range(1, rMax+1) if random() < random_frequency])
+                    a = a.copy([Impulsion("tooth", fire_time(x, a), duration(x, a), amplitude(a)) for x in range(1, aMax+1) if random() < random_frequency])
                 states = [r, a]
             newStates.extend(states)
         return newStates
@@ -490,8 +489,8 @@ class RealtimeSystem:
         Y = self.Y[start_index:end_index]
         return X, Y
 
-    def generate_frames(self, foldername):
-        FRAMES_DIR = os.path.join(os.path.abspath(''), "frames", foldername)
+    def generate_frames(self, folders):
+        FRAMES_DIR = os.path.join(os.path.abspath(''), "frames", *folders)
         if os.path.exists(FRAMES_DIR):
             rmtree(FRAMES_DIR)
         os.makedirs(FRAMES_DIR)
@@ -500,10 +499,10 @@ class RealtimeSystem:
         while self.offset < the_end:
             plt.clf() # Mandatory call, otherwise the figure will not take into account the scale.
             self.fig = self.render_scaled()
-            self.fig.savefig(os.path.join(FRAMES_DIR, "{}_{}.png".format(foldername, i)))
+            self.fig.savefig(os.path.join(FRAMES_DIR, "{}_{}.png".format(folders[-1], i)))
             self.offset += self.dt_per_sample
             i += 1
-            print("{} frames generation: {:.1f}% done.".format(foldername, (self.offset * 100) / the_end))
+            print("{} frames generation: {:.1f}% done.".format("/".join(folders), (self.offset * 100) / the_end))
 
 
     def to_csv(self):
@@ -572,7 +571,7 @@ if __name__ == "__main__":
     transition = TransitionType("sine", 5)
     noise = Noise("gaussian", 0.5)  # Normal function (Gaussian noise)
     # 3 states, with impulses 
-    states = [State("Rest", 1200, 10, []), State("Active", 1200, 50,[])]
+    rest, active = states = [State("Rest", 1200, 10, []), State("Active", 1200, 50,[])]
 
     rlts = RealtimeSystem(realtime_tick,
                           delta_time_per_sample,
@@ -580,9 +579,9 @@ if __name__ == "__main__":
                           offset,
                           transition,
                           noise,
-                          StateFactory.random(5, states[0], states[1], with_random_impulses=True, max_impulses_per_state=5))
+                          StateFactory.random(5, rest, active, with_random_impulses=False, max_impulses_per_state=0))
 
-    rlts.generate_frames("stable")
+    rlts.generate_frames(["train", "stable"])
 
     rlts = RealtimeSystem(realtime_tick,
                           delta_time_per_sample,
@@ -590,6 +589,26 @@ if __name__ == "__main__":
                           offset,
                           transition,
                           noise,
-                          StateFactory.random(5, states[0], states[1], with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
+                          StateFactory.random(5, rest, active, with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
 
-    rlts.generate_frames("malfunction")
+    rlts.generate_frames(["train", "malfunction"])
+    
+    rlts = RealtimeSystem(realtime_tick,
+                          delta_time_per_sample,
+                          scale,
+                          offset,
+                          transition,
+                          noise,
+                          StateFactory.random(5, rest, active, with_random_impulses=False, max_impulses_per_state=0))
+
+    rlts.generate_frames(["valid","stable"])
+
+    rlts = RealtimeSystem(realtime_tick,
+                          delta_time_per_sample,
+                          scale,
+                          offset,
+                          transition,
+                          noise,
+                          StateFactory.random(5, rest, active, with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
+
+    rlts.generate_frames(["valid", "malfunction"])

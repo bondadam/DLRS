@@ -26,8 +26,6 @@ La première étape que nous nous sommes fixés est de créer un outil permettan
 
 ### 06/03/2020
 
-
-
 Discussion sur la conception du logiciel de simulation.
 
 La question principale: Est-ce que le logiciel génerera des graphes réalistes tout seul pour entraîner le modèle de machine learning, ou bien est-ce que le logiciel prendra en entrée les fichiers .csv fournis à M. Formenti par l'entreprise et qui correspondent aux relevés des senseurs.
@@ -154,3 +152,40 @@ Nous générons des frames du même graphe à des intervalles réguliers défini
 
 ##### Frame 35
 ![Frame 1](https://i.imgur.com/UiJ5u22.png)
+
+### 16/04/2020 - 23/04/2020
+
+On est dans une phase de recherche et d'exploration d'éventuels pistes qui vont permettre d'inventer des techniques pour une bonne détection d'anomalies dans un système à temps réel. Pour l'instant, on a 3 idées.
+
+#### L'entraînement naïve des courbes d'états simulées par notre simulateur `RealtimeSystem` avec TensorFlow.
+
+Cette partie repose entièrement sur l'entraînement des réseaux de neurones (Convolutional Neural Networks) pour un dataset d'images généré avec le simulateur qu'on a construit précédement.
+
+On génère notamment deux ensembles de données:
+
+- un dossier **train** qui contient les images étiquettées `stable` pour un système temps réel stable et `malfunction` pour un système avec une forte présence d'anomalies généré aléatoirement.
+- un dossier **valid** qui contient les images de tests généré de la même façon que *train* mais non identique.
+
+Après avoir lancer le fichier de simulation qui va générer ces dossiers (`cd src && python simulator.py`), vous pouvez lancer le notebook jupyter `Deep Learning Experimentations.ipynb` qui inclut les différents étapes mis en oeuvre pour l'entraînement et de mesure d'accuracy.
+
+On a établie un pipeline d'entraînement de base avec TensorFlow, il ne reste plus qu'à optimiser quelques parties et analyser les résultats qu'on a.
+
+#### L'analyse des features de la série temporelle généré par le système à temps réel.
+
+*TO-DO*
+
+#### La détection d'anomalies à l'aide de l'API de Detection d'Objets en Temps Réel de TensorFlow.
+
+Vous avez sans doute vu des articles ainsi que des vidéos en ligne exploitant une technique de reconnaissance d'objets ou de personnes sur des feeds de vidéos à temps réel.
+
+Notre idée est d'exploiter cette technique pour exclusivement détecter des anomalies.
+
+À l'aide de la librairie OpenCV pour les traitements d'images, on a réussi à isoler ainsi qu'identifier des anomalies. La prochaine étape sera d'entraîner un modèle pour les reconnaître automatiquement.
+
+|Système stable|Système avec anomalies|Anomalies isolées|
+|:-:|:-:|:-:|
+|![stable](https://i.imgur.com/S9LlzNm.jpg)|![malfunction](https://i.imgur.com/3kaW5G1.jpg)|![](https://i.imgur.com/2KXH7Qa.jpg)|
+
+|Anomalies identifiées|
+|:-:|
+|![](https://i.imgur.com/ojUInTC.jpg)|

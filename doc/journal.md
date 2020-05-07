@@ -189,3 +189,17 @@ Notre idée est d'exploiter cette technique pour exclusivement détecter des ano
 |Anomalies identifiées|
 |:-:|
 |![](https://i.imgur.com/ojUInTC.jpg)|
+
+### 30/04/2020 - 07/05/2020
+
+On a réussi à entraîner un modèle qui reconnaît des anomalies dans notre système via TensorFlow Object Detection API. Les étapes peuvent être reproduit en suivant les étapes décrites dans `src/object_detection_commands.md`. L'entraînement a été fait sur une NVIDIA GTX960M (avec la technologie CUDA)... 15000 itérations en 10 heures.
+
+Le nombre d'itérations recommandés est 200000 sauf que l'entraînement va tourner longtemps. Bien entendu, plus on fait tourner le modèle, moins il a de *loss*, plus il a de *precision*. Même avec relativement peu d'itérations, on a une détection qui est plus ou moins précise.
+
+**Démonstration:**
+
+|Système avec detection d'anomalies en temps réel|
+|:-:|
+|![](https://i.imgur.com/7O1LFvo.gif)|
+|![](https://i.imgur.com/l9PBc1P.gif)|
+

@@ -192,12 +192,13 @@ class StateFactory:
                 fire_time = lambda x, state: randrange(time(x, state), time(x+1, state))
                 duration = lambda x, state: randint(0, abs(randint(1,2) * time(x + 1, state) - fire_time(x, state)))
                 # 0% to 10% of state's amplitude
-                amplitude = lambda state: random() * (state.amplitude * 0.1)
+                amplitude = lambda state: random() * state.amplitude
                 r, a = states
                 rMax = randint(0, max_impulses_per_state)
                 aMax = randint(0, max_impulses_per_state)
                 if random() < random_frequency:
                     r = r.copy([Impulsion("tooth", fire_time(x, r), duration(x, r), amplitude(r)) for x in range(1, rMax+1) if random() < random_frequency])
+                if random() < random_frequency:
                     a = a.copy([Impulsion("tooth", fire_time(x, a), duration(x, a), amplitude(a)) for x in range(1, aMax+1) if random() < random_frequency])
                 states = [r, a]
             newStates.extend(states)
@@ -482,14 +483,17 @@ class RealtimeSystem:
         return X, Y
     
     def data_scaled(self):
-        _, Y = self.data()
+        if self.Y is None:
+            _, Y = self.data()
+        else:
+            Y = self.Y
         X = np.arange(self.offset, self.offset + self.scale, self.dt_per_sample)
         start_index = self.offset // self.dt_per_sample
         end_index = start_index + self.scale // self.dt_per_sample
-        Y = self.Y[start_index:end_index]
+        Y = Y[start_index:end_index]
         return X, Y
 
-    def generate_frames(self, folders):
+    def generate_frames(self, folders, unique=False):
         FRAMES_DIR = os.path.join(os.path.abspath(''), "frames", *folders)
         if os.path.exists(FRAMES_DIR):
             rmtree(FRAMES_DIR)
@@ -500,7 +504,7 @@ class RealtimeSystem:
             plt.clf() # Mandatory call, otherwise the figure will not take into account the scale.
             self.fig = self.render_scaled()
             self.fig.savefig(os.path.join(FRAMES_DIR, "{}_{}.png".format(folders[-1], i)))
-            self.offset += self.dt_per_sample
+            self.offset += self.dt_per_sample if not unique else self.scale
             i += 1
             print("{} frames generation: {:.1f}% done.".format("/".join(folders), (self.offset * 100) / the_end))
 
@@ -523,6 +527,7 @@ class RealtimeSystem:
         return ax.figure
     
     def render_scaled(self, color='red'):
+        self.data() # Refresh data
         X, Y = self.data_scaled()
         ax = sns.lineplot(X, Y, color=color)
         L = ax.lines[-1]
@@ -579,7 +584,7 @@ if __name__ == "__main__":
                           offset,
                           transition,
                           noise,
-                          StateFactory.random(5, rest, active, with_random_impulses=False, max_impulses_per_state=0))
+                          StateFactory.random(10, rest, active, with_random_impulses=True, max_impulses_per_state=1))
 
     rlts.generate_frames(["train", "stable"])
 
@@ -589,7 +594,7 @@ if __name__ == "__main__":
                           offset,
                           transition,
                           noise,
-                          StateFactory.random(5, rest, active, with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
+                          StateFactory.random(10, rest, active, with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
 
     rlts.generate_frames(["train", "malfunction"])
     
@@ -599,7 +604,7 @@ if __name__ == "__main__":
                           offset,
                           transition,
                           noise,
-                          StateFactory.random(5, rest, active, with_random_impulses=False, max_impulses_per_state=0))
+                          StateFactory.random(10, rest, active, with_random_impulses=False, max_impulses_per_state=0))
 
     rlts.generate_frames(["valid","stable"])
 
@@ -609,6 +614,26 @@ if __name__ == "__main__":
                           offset,
                           transition,
                           noise,
-                          StateFactory.random(5, rest, active, with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
+                          StateFactory.random(10, rest, active, with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
 
     rlts.generate_frames(["valid", "malfunction"])
+
+    rlts = RealtimeSystem(realtime_tick,
+                          delta_time_per_sample,
+                          scale,
+                          offset,
+                          transition,
+                          noise,
+                          StateFactory.random(200, rest, active))
+
+    rlts.generate_frames(["object_detection", "stable"], unique=True)
+    
+    rlts = RealtimeSystem(realtime_tick,
+                          delta_time_per_sample,
+                          scale,
+                          offset,
+                          transition,
+                          noise,
+                          StateFactory.random(200, rest, active, with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
+
+    rlts.generate_frames(["object_detection", "malfunction"], unique=True)

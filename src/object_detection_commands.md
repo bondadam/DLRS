@@ -38,6 +38,8 @@ In `models/research/object_detection` directory:
 
 Download http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2018_01_28.tar.gz and extract it. (This needs to be in a folder named `ssd_mobilenet_v1_coco_2018_01_28`)
 
+Copy `src/malfunction_detection_model/` folder to `models/research/object_detection`.
+
 Move `models/research/object_detection/legacy/train.py` to `models/research/object_detection`.
 
 * **For training:**

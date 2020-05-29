@@ -1,0 +1,109 @@
+\documentclass[french]{article}
+\usepackage{geometry}
+\geometry{a4paper}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{empheq}
+\usepackage{mdframed}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{psfrag}
+\usepackage{pgfplots}
+\usepackage{bm}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{babel}
+\usepackage{indentfirst}
+
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{mygray}{RGB}{243,243,244}
+
+\newcommand\orangebox[1]{\fcolorbox{ocre}{mygray}{\hspace{1em}#1\hspace{1em}}}
+
+\newtheoremstyle{mytheoremstyle}
+    {3pt}
+    {3pt}
+    {\normalfont}
+    {0cm}
+    {\rmfamily\bfseries}
+    {.}
+    {1em}
+    {{\color{ocre}\thmname{#1}~\thmnumber{#2}}\thmnote{\,--\,#3}}
+\newtheoremstyle{myproblemstyle}
+    {3pt}
+    {3pt}
+    {\normalfont}
+    {0cm}
+    {\rmfamily\bfseries}
+    {.}
+    {1em}
+    {{\color{black}\thmname{#1}~\thmnumber{#2}}\thmnote{\,--\,#3}}
+\theoremstyle{mytheoremstyle}
+\newmdtheoremenv[
+    backgroundcolor=mygray,
+    linecolor=ocre,
+    leftmargin=0pt,
+    innerleftmargin=20pt,
+    innerrightmargin=20pt,
+]{theorem}{Theorem}[section]
+\theoremstyle{mytheoremstyle}
+\newmdtheoremenv[
+    backgroundcolor=mygray,
+    linecolor=ocre,
+    leftmargin=0pt,
+    innerleftmargin=20pt,
+    innerrightmargin=20pt,
+]{definition}{Definition}[section]
+\theoremstyle{myproblemstyle}
+\newmdtheoremenv[
+    linecolor=black,
+    leftmargin=0pt,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+]{problem}{Problem}[section]
+
+\usepgfplotslibrary{colorbrewer}
+\pgfplotsset{width=8cm,compat=1.9}
+
+\title{Approches Deep Learning à la détection d'anomalies dans un système à temps réel}
+\author{Mohamed-Amine ROMDHANE, Adam FEOR}
+\date{}
+
+\begin{document}
+    \maketitle
+
+    \tableofcontents
+    \clearpage
+
+    \section{Introduction}
+    Dans le cadre d'un besoin d'une startup spécialisée dans des services d'optimisation de consommation d'eau dans le milieu agricole, on veut pouvoir mettre en place un modèle de détection d'anomalies matérielles via les méthodes d'apprentissage automatique et de l'intelligence artificielle. Dans cette optique, cette entreprise a installé des senseurs sur des pompes à eaux qui en indiquant la pression à l'intérieur, permettent d'indiquer l'état d'irrigation. Celle-ci est déclenchée automatiquement à l'aide de capteurs d'humidité du sol.     
+    \section{Problématique \& Hypothèses}
+    Les senseurs de pression d'eau d'une pompe ne sont pas parfaits, et ils peuvent envoyer des valeurs légèrement différentes entre deux lectures. De plus, certains facteurs comme la chaleur ou l'humidité qui varient naturellement font en sorte que les courbes de ces senseurs ont toujours un bruit de basse amplitude. Il peut aussi arriver qu'une bulle d'air ou un petit objet passe temporairement par la pompe et devienne une "dent" sur le graphe de suivi de pression d'eau, c'est à dire une forte perturbation d'amplitude en un court moment.
+    \newline
+    \indent Le fonctionnement normal d'une pompe ressemble donc à une période calme perturbée uniquement par un bruit global, puis lorsque le capteur détecte que l'irrigation est nécessaire la courbe grimpe jusqu'à son maximum, et y reste jusqu'à ce que le capteur détecte que la terre est suffisamment irriguée. S'ensuit une chute brusque de la pression puis un retour au calme jusqu'au prochain cycle.
+    \newline
+    \indent Dans le cadre de cet étude, on a deux problèmes. Le premier est celui de la disponibilité des données. Le contact limité avec l'entreprise en ai une raison. Le second problème c'est que le modèle réel a beaucoup trop de variables, les senseurs dépendent les uns des autres et les bruits ainsi que les anomalies ont plusieurs sources et facteurs. 
+    \newline
+    \indent Le but de ce projet est au final de développer des approches d'apprentissage profond. Avec le peu de données qu'on a, la solution était de faire nos propres données qui s'approchent au mieux de ce qu'on nous a communiqué.
+    \section{Les données}
+    Faute de manque de données, nous nous sommes fixés la  création d'un outil permettant de génerer des courbes d'états ressemblant à celles utilisés par l'entreprise. Cet outil devrait être modulaire pour permettre de simuler toutes les situations auxquelles l'entreprise est confrontée, incluant les anomalies. Il faut donc prévoir des paramètres permettant de varier le temps entre les cycles de pression, le nombre d'anomalies, leur type, le bruit, la fonction de transition entre états, etc...
+        \subsection{Simulation des données}
+        Le simulateur \textit{simulator.py} simule un système à temps réel. Ce dernier regroupe plusieurs variables dont:
+        \begin{itemize}
+            \item \textbf{realtime\_tick} l'écroulement temporel en millisecondes avant l'enregistrement d'un échantillon. Cette variable s'incrémente par \textit{dt\_per\_sample} après chaque échantillon.
+            \item \textbf{dt\_per\_sample} c'est le temps en secondes entre chaque étape de simulation (temps entre deux échantillons).
+            \item \textbf{transition\_type} est la fonction de transition entre états (exemple: East-In-Out Quad, Ease-In-Out Sine, Linear...).
+            \item \textbf{noise} est la fonction de bruit global (exemple: "gaussian" pour un bruit gaussien).
+            \item \textbf{states} est la liste d'états. Chaque état a une durée, une amplitude, et la liste (vide ou pas) des anomalies (appelées impulsions dans le contexte de simulation). Une anomalie a sa propre durée, le temps de son début ainsi que son amplitude.
+        \end{itemize}
+        \subsection{Génération des données}
+    \section{Deep Learning avec TensorFlow}
+        \subsection{Approche naïve avec CNN}
+        \subsection{Génération des features avec TSFresh}
+        \subsection{Détection d'anomalies en tant qu'objets}
+    \section{Analyses et Interprétations}
+    \section{Conclusion}
+\end{document}

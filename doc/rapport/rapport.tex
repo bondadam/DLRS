@@ -17,6 +17,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{babel}
 \usepackage{indentfirst}
+\usepackage{float}
 
 \definecolor{ocre}{RGB}{243,102,25}
 \definecolor{mygray}{RGB}{243,243,244}
@@ -102,7 +103,7 @@
         \subsection{Génération des données}
     \section{Deep Learning avec TensorFlow}
         \subsection{Approche naïve avec CNN}
-        La première idée qu'on a eu était d'utiliser le réseau neuronal convolutif de TensorFlow (convolutional neural networks, abbrv: cnn) pour l'entraîner à reconnaître les images provenant d'un système stable ainsi qu'un système à forte perturbations admettant plusieurs anomalies. Vu que précédemment on a déjà généré 1000 images pour chacune de nos classes \textbf{stable} et \textbf{malfunction}, on les a alors importées pour être pré-traitées avant de les brancher au réseau. Dans le prétraitement, on redimensionne la taille de l'image (originalement 640x480) à 250x250. On défini le nombre d'\textit{epochs} comme étant égale à 100 et le nombre de \textit{batchs} de données à être traité simultanément dans le réseau de neurones est égale à 8. Notre modèle TensorFlow a le pipeline décrit ci-dessous:
+        La première idée qu'on a eu était d'utiliser le réseau neuronal convolutif de TensorFlow (convolutional neural networks, abbrv: cnn) pour l'entraîner à reconnaître les images provenant d'un système stable ainsi qu'un système à forte perturbations admettant plusieurs anomalies. Vu que précédemment on a déjà généré 1000 images pour chacune de nos classes \textbf{stable} et \textbf{malfunction}, on les a alors importées pour être pré-traitées avant de les brancher au réseau. Dans le prétraitement, on redimensionne la taille de l'image (originalement 640x480) à 250x250 et on redéfini la gamme de couleur de l'image comme étant \textit{greyscale}. On défini le nombre d'\textit{epochs} comme étant égale à 100 et le nombre de \textit{batchs} de données à être traité simultanément dans le réseau de neurones est égale à 8. Notre modèle TensorFlow a le pipeline décrit ci-dessous:
         \begin{center}
             Une \textbf{couche de convolution} à 2 dimensions avec \textbf{16} filtres, un noyau de taille \textbf{11x11} et la fonction de correction \textbf{RELu}. \\
             $
@@ -139,8 +140,14 @@
         \]
         et
         \[
-        Sigmoïd(x) = \dfrac{1}{1+e^{-x}}
+        Sigmoid(x) = \dfrac{1}{1+e^{-x}}
         \]
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=\textwidth]{images/cnn.png}
+            \caption{Le modèle CNN de classification d'anomalies}
+            \label{}
+        \end{figure}
         Notre modèle est compilé avec 2 ensembles d'images distincts. Un ensemble d'images d'entraînement et un ensemble de validation. En total, on a 2200 images pour l'entraînement et 2200 images pour la validation.
         \newline
         \begin{itemize}

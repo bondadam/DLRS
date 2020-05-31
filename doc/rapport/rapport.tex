@@ -89,7 +89,7 @@
     \newline
     \indent Le but de ce projet est au final de développer des approches d'apprentissage profond. Avec le peu de données qu'on a, la solution était de faire nos propres données qui s'approchent au mieux de ce qu'on nous a communiqué.
     \section{Les données}
-    Faute de manque de données, nous nous sommes fixés la  création d'un outil permettant de génerer des courbes d'états ressemblant à celles utilisés par l'entreprise. Cet outil devrait être modulaire pour permettre de simuler toutes les situations auxquelles l'entreprise est confrontée, incluant les anomalies. Il faut donc prévoir des paramètres permettant de varier le temps entre les cycles de pression, le nombre d'anomalies, leur type, le bruit, la fonction de transition entre états, etc...
+    Faute de manque de données, nous nous sommes fixés la  création d'un outil permettant de générer des courbes d'états ressemblant à celles utilisés par l'entreprise. Cet outil devrait être modulaire pour permettre de simuler toutes les situations auxquelles l'entreprise est confrontée, incluant les anomalies. Il faut donc prévoir des paramètres permettant de varier le temps entre les cycles de pression, le nombre d'anomalies, leur type, le bruit, la fonction de transition entre états, etc...
         \subsection{Simulation des données}
         Le simulateur \textit{simulator.py} simule un système à temps réel. Ce dernier regroupe plusieurs variables dont:
         \begin{itemize}
@@ -102,6 +102,51 @@
         \subsection{Génération des données}
     \section{Deep Learning avec TensorFlow}
         \subsection{Approche naïve avec CNN}
+        La première idée qu'on a eu était d'utiliser le réseau neuronal convolutif de TensorFlow (convolutional neural networks, abbrv: cnn) pour l'entraîner à reconnaître les images provenant d'un système stable ainsi qu'un système à forte perturbations admettant plusieurs anomalies. Vu que précédemment on a déjà généré 1000 images pour chacune de nos classes \textbf{stable} et \textbf{malfunction}, on les a alors importées pour être pré-traitées avant de les brancher au réseau. Dans le prétraitement, on redimensionne la taille de l'image (originalement 640x480) à 250x250. On défini le nombre d'\textit{epochs} comme étant égale à 100 et le nombre de \textit{batchs} de données à être traité simultanément dans le réseau de neurones est égale à 8. Notre modèle TensorFlow a le pipeline décrit ci-dessous:
+        \begin{center}
+            Une \textbf{couche de convolution} à 2 dimensions avec \textbf{16} filtres, un noyau de taille \textbf{11x11} et la fonction de correction \textbf{RELu}. \\
+            $
+            \downarrow
+            $\\
+            Une \textbf{couche de pooling} où on prend que le \textbf{maximum} à l'issue des résultats précédents. \\
+            $
+            \downarrow
+            $\\
+            Une \textbf{couche de convolution} à 2 dimensions avec \textbf{32} filtres, un noyau de taille \textbf{11x11} et la fonction de correction \textbf{RELu}. \\
+            $
+            \downarrow
+            $\\
+            Une \textbf{couche de pooling} où on prend que le \textbf{maximum} à l'issue des résultats précédents. \\
+            $
+            \downarrow
+            $\\
+            Une \textbf{couche de convolution} à 2 dimensions avec \textbf{64} filtres, un noyau de taille \textbf{11x11} et la fonction de correction \textbf{RELu}.\\
+            $
+            \downarrow
+            $\\
+            Une \textbf{couche entièrement connectée} avec \textbf{512} neurones et une fonction d'activation \textbf{RELu}.\\
+            $
+            \downarrow
+            $\\
+            Une seul neurone avec la fonction d'activation \textbf{Sigmoïd}.
+        \end{center}
+        Avec 
+        \[
+        RELu(x) = \begin{cases}
+            x,& \text{si } x \ge 0\\
+            0,& \text{sinon}
+        \end{cases}
+        \]
+        et
+        \[
+        Sigmoïd(x) = \dfrac{1}{1+e^{-x}}
+        \]
+        Notre modèle est compilé avec 2 ensembles d'images distincts. Un ensemble d'images d'entraînement et un ensemble de validation. En total, on a 2200 images pour l'entraînement et 2200 images pour la validation.
+        \newline
+        \begin{itemize}
+            \item L'ensemble d'entraînement comporte 1100 images étiquetées \textbf{stable} ainsi que 1100 images étiquetées \textbf{malfunction}.
+            \item L'ensemble de validation comporte le même nombre d'images pour chacune des deux classes mais des instances différentes de ceux dans l'ensemble l'entraînement.
+        \end{itemize}
         \subsection{Génération des features avec TSFresh}
         \subsection{Détection d'anomalies en tant qu'objets}
     \section{Analyses et Interprétations}

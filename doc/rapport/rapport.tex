@@ -18,6 +18,9 @@
 \usepackage{babel}
 \usepackage{indentfirst}
 \usepackage{float}
+\usepackage{enumitem}
+\usepackage{subcaption}
+
 
 \definecolor{ocre}{RGB}{243,102,25}
 \definecolor{mygray}{RGB}{243,243,244}
@@ -93,17 +96,17 @@
     Faute de manque de données, nous nous sommes fixés la  création d'un outil permettant de générer des courbes d'états ressemblant à celles utilisés par l'entreprise. Cet outil devrait être modulaire pour permettre de simuler toutes les situations auxquelles l'entreprise est confrontée, incluant les anomalies. Il faut donc prévoir des paramètres permettant de varier le temps entre les cycles de pression, le nombre d'anomalies, leur type, le bruit, la fonction de transition entre états, etc...
         \subsection{Simulation des données}
         Le simulateur \textit{simulator.py} simule un système à temps réel. Ce dernier regroupe plusieurs variables dont:
-        \begin{itemize}
+        \begin{itemize}[label={•}]
             \item \textbf{realtime\_tick} l'écroulement temporel en millisecondes avant l'enregistrement d'un échantillon. Cette variable s'incrémente par \textit{dt\_per\_sample} après chaque échantillon.
             \item \textbf{dt\_per\_sample} c'est le temps en secondes entre chaque étape de simulation (temps entre deux échantillons).
-            \item \textbf{transition\_type} est la fonction de transition entre états (exemple: East-In-Out Quad, Ease-In-Out Sine, Linear...).
-            \item \textbf{noise} est la fonction de bruit global (exemple: "gaussian" pour un bruit gaussien).
-            \item \textbf{states} est la liste d'états. Chaque état a une durée, une amplitude, et la liste (vide ou pas) des anomalies (appelées impulsions dans le contexte de simulation). Une anomalie a sa propre durée, le temps de son début ainsi que son amplitude.
+            \item \textbf{transition\_type} est la fonction de transition entre états (exemple: East-In-Out Quad, Ease-In-Out Sine, Linear...). Pour conserver le nombres d'échantillons qu'on a, pour un état $A$ et $B$ où la différence d'amplitude est importante, on prend par exemple, les $n$ derniers échantillons de $A$ et et les $n$ premiers échantillons de $B$ et on applique la fonction de transition les $2n$ échantillons.
+            \item \textbf{noise} est la fonction de bruit global présent dans le système (exemple: "gaussian" pour un bruit gaussien). Le bruit a son propre amplitude. 
+            \item \textbf{states} est la liste d'états. Chaque état a une durée, une amplitude, et la liste (vide ou pas) des anomalies (appelées impulsions dans le contexte de simulation). Une \textit{anomalie} a sa propre durée, le temps de son début ainsi que son amplitude.
         \end{itemize}
         \subsection{Génération des données}
     \section{Deep Learning avec TensorFlow}
         \subsection{Approche naïve avec CNN}
-        La première idée qu'on a eu était d'utiliser le réseau neuronal convolutif de TensorFlow (convolutional neural networks, abbrv: cnn) pour l'entraîner à reconnaître les images provenant d'un système stable ainsi qu'un système à forte perturbations admettant plusieurs anomalies. Vu que précédemment on a déjà généré 1000 images pour chacune de nos classes \textbf{stable} et \textbf{malfunction}, on les a alors importées pour être pré-traitées avant de les brancher au réseau. Dans le prétraitement, on redimensionne la taille de l'image (originalement 640x480) à 250x250 et on redéfini la gamme de couleur de l'image comme étant \textit{greyscale}. On défini le nombre d'\textit{epochs} comme étant égale à 100 et le nombre de \textit{batchs} de données à être traité simultanément dans le réseau de neurones est égale à 8. Notre modèle TensorFlow a le pipeline décrit ci-dessous:
+        La première idée qu'on a eu était d'utiliser le réseau neuronal convolutif de TensorFlow (convolutional neural networks, abbrv: cnn) pour l'entraîner à reconnaître les images provenant d'un système stable ainsi qu'un système à forte perturbations admettant plusieurs anomalies. Vu que précédemment on a déjà généré 1000 images pour chacune de nos classes \textbf{stable} et \textbf{malfunction}, on les a alors importées pour être pré-traitées avant de les brancher au réseau. Dans le prétraitement, on redimensionne la taille de l'image (originalement 640x480) à 250x250. Vu que la couleur de l'image n'a pas d'importance, on redéfini sa gamme de couleur comme étant du \textit{grayscale}. Cette manipulation a le bénéfice d'avoir un tensor de dimension (250x250x1) au lieu de (250x250x3). On défini le nombre d'\textit{epochs} comme étant égale à 100 et le nombre de \textit{batchs} de données à être traité simultanément dans le réseau de neurones est égale à 8. Notre modèle TensorFlow a le pipeline décrit ci-dessous:
         \begin{center}
             Une \textbf{couche de convolution} à 2 dimensions avec \textbf{16} filtres, un noyau de taille \textbf{11x11} et la fonction de correction \textbf{RELu}. \\
             $
@@ -154,8 +157,52 @@
             \item L'ensemble d'entraînement comporte 1100 images étiquetées \textbf{stable} ainsi que 1100 images étiquetées \textbf{malfunction}.
             \item L'ensemble de validation comporte le même nombre d'images pour chacune des deux classes mais des instances différentes de ceux dans l'ensemble l'entraînement.
         \end{itemize}
+        Dans la section 5, on explique les résultats qu'on a eu suivant cette approche et pourquoi elle est naïve.
         \subsection{Génération des features avec TSFresh}
         \subsection{Détection d'anomalies en tant qu'objets}
+        Dans le but de couvrir d'autres approches intéressantes, on s'est mit a chercher les techniques les plus récentes pour traiter les deux thèmes de ce travail de recherche: \textit{détection d'anomalies} et \textit{temps réel}. Une techniques qui nous a marqué le plus est celle de la détection d'objets. L'article Wikipédia en anglais parle de ce sujet. On peut aussi voir dans la figure ci-dessous un exemple d'une telle détection d'objets réels.
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=.8\textwidth]{images/real_objects.jpg}
+            \caption{Image wikipédia qui montre les résultats obtenus d'une détection d'objets à l'aide de l'algorithme YOLOv3 (You Only Look Once) ainsi que le module DNN d'OpenCV. Ce modèle peut détecter jusqu'à 80 objets.}
+            \label{}
+        \end{figure}
+        L'avantage de cette technique c'est qu'elle permet de reconnaître des objets en temps réel dans, par exemple, une vidéo. Dans cette partie, on évoque la manière dont on génère les données qui servent comme entrée pour un modèle pré-entraîné fourni par l'API de détection d'objets de TensorFlow.
+        \subsubsection{Une anomalie est un objet}
+        Après avoir consulter le fonctionnement basique de l'API de détection d'objets, on a constaté que celle-ci demande un format très particulier (un fichier binaire TFRecord) ainsi qu'une configuration assez compliquée (un fichier .config avec les configurations possibles du modèle). Les anomalies présent dans une image doivent être identifiées et isolées chacune dans sa propre bounding box. L'outil qui permet de faire cette manipulation porte le nom de \textit{LabelImg}. Cet outil permet de générer un fichier csv comportant les colonnes suivantes: \textit{filename} (le nom de fichier d'image où l'anomalie se trouve), \textit{width} (la largeur de l'image), \textit{height} (la hauteur de l'image), \textit{class} (la classe/libellé/étiquette de l'image, \textbf{malfunction} dans notre cas), \textit{xmin} (coordonnée x du 1er point de la bounding box), \textit{ymin} (coordonnée y du 1er point de la bounding box), \textit{xmax} (coordonnée x du 2ème point de la bounding box) et \textit{ymax} (coordonnée y du 2ème point de la bounding box). Cependant, pour générer une énorme base de données d'anomalies isolées, il en faut beaucoup de temps et une main d'œuvre importante. On présente une autre méthode pour résoudre ce problème.
+        \newline
+        \indent Vu qu'on a une version stable d'un système à temps réel ainsi qu'un version avec des anomalies, à l'aide de la librairie de traitement d'images OpenCV, on procède aux manipulations suivantes:
+        \newline
+        Soit une simulation $S$ d'un système à temps réel commençant à un temps $t$, ayant une durée $d$. On capture la courbe d'état des deux version (stable et avec anomalies) de $t$ à $t+d$ en tant qu'image.
+        \newline
+        Soit $M_{stable}$ la matrice de pixel de l'image du système stable capturée, et soit $M_{malfunction}$ la matrice de ce même système mais avec une forte présence d'anomalies.
+        L'algorithme est le suivant:
+        \begin{enumerate}
+            \item $M_{diff} = M_{stable} - M_{malfunction}$
+            \item On applique 2 fois le filtre \textbf{erode} d'OpenCV (érosion) sur $M_{diff}$ pour se débarrasser des petits clusters de pixels. On a une petite perte d'information sur cette étape qui se compense sur le fait de négliger les anomalies de taille moins importante dû à une erreur de lecture peu fréquente, par exemple.
+            \item On applique la fonction \textbf{inRange} d'OpenCV pour obtenir le masque d'image $Mask$ qui extrait les pixels ayant une valeur entre deux gammes de couleurs. Pour notre cas, vu que nos images sont presque similaire, la matrice de pixels $M_{diff}$ admet des couleurs entre le noir et le blanc, le noir étant la couleur de fond et le blanc est le résidu issue de la soustraction. Le masque capture ce résidu.
+            \item On applique la fonction \textbf{findContours} d'OpenCV, qui renvoie la liste des contours (bounding box) de chaque cluster de résidu dans $Mask$.
+            \item Pour chaque contour trouvé, on extrait le rectangle minimale qui enveloppe ce contour avec la fonction \textbf{boundingRect} d'OpenCV.
+            \item Pour chaque bounding box, on écrit la ligne correspondante dans un csv avec les données mentionnées précédemment.
+        \end{enumerate}
+
+        \begin{figure}[H]
+            \begin{subfigure}{\linewidth}
+                \includegraphics[width=.3\linewidth]{images/od_stable.jpg}\hfill
+                \includegraphics[width=.3\linewidth]{images/od_malfunction.jpg}\hfill
+                \includegraphics[width=.3\linewidth]{images/od_isolated.jpg}
+                \caption{La figure à gauche repésente l'image du système $stable$, au milieu $malfunction$ avec des fortes perturbations, à droite l'image résultante de l'opération de soustraction des matrices de pixels des deux: $M_{diff}$ (1. de l'algorithme ci-dessus)}
+            \end{subfigure}\par\medskip
+            \begin{subfigure}{\linewidth}
+                \hfill
+                \includegraphics[width=.4\linewidth]{images/od_erosion.jpg}
+                \hfill
+                \includegraphics[width=.4\linewidth]{images/od_identified.jpg}
+                \hfill
+                \caption{La figure à gauche représente l'image issue de la matrice de pixel $M_{diff}$ après l'application du filtre d'érosion, à droite le résultat des opérations 3, 4 et 5 de l'algorithme ci-dessus.}
+            \end{subfigure}\par\medskip
+        \end{figure}
+        
     \section{Analyses et Interprétations}
     \section{Conclusion}
 \end{document}

@@ -108,7 +108,7 @@
         \subsection{Approche naïve avec CNN}
         La première idée qu'on a eu était d'utiliser le réseau neuronal convolutif de TensorFlow (convolutional neural networks, abbrv: cnn) pour l'entraîner à reconnaître les images provenant d'un système stable ainsi qu'un système à forte perturbations admettant plusieurs anomalies. Vu que précédemment on a déjà généré 1000 images pour chacune de nos classes \textbf{stable} et \textbf{malfunction}, on les a alors importées pour être pré-traitées avant de les brancher au réseau. Dans le prétraitement, on redimensionne la taille de l'image (originalement 640x480) à 250x250. Vu que la couleur de l'image n'a pas d'importance, on redéfini sa gamme de couleur comme étant du \textit{grayscale}. Cette manipulation a le bénéfice d'avoir un tensor de dimension (250x250x1) au lieu de (250x250x3). On défini le nombre d'\textit{epochs} comme étant égale à 100 et le nombre de \textit{batchs} de données à être traité simultanément dans le réseau de neurones est égale à 8. Notre modèle TensorFlow a le pipeline décrit ci-dessous:
         \begin{center}
-            Une \textbf{couche de convolution} à 2 dimensions avec \textbf{16} filtres, un noyau de taille \textbf{11x11} et la fonction de correction \textbf{RELu}. \\
+            Une \textbf{couche de convolution} à 2 dimensions avec \textbf{16} filtres, un noyau de taille \textbf{3x3} et la fonction de correction \textbf{RELu}. \\
             $
             \downarrow
             $\\
@@ -116,7 +116,7 @@
             $
             \downarrow
             $\\
-            Une \textbf{couche de convolution} à 2 dimensions avec \textbf{32} filtres, un noyau de taille \textbf{11x11} et la fonction de correction \textbf{RELu}. \\
+            Une \textbf{couche de convolution} à 2 dimensions avec \textbf{32} filtres, un noyau de taille \textbf{3x3} et la fonction de correction \textbf{RELu}. \\
             $
             \downarrow
             $\\
@@ -124,7 +124,7 @@
             $
             \downarrow
             $\\
-            Une \textbf{couche de convolution} à 2 dimensions avec \textbf{64} filtres, un noyau de taille \textbf{11x11} et la fonction de correction \textbf{RELu}.\\
+            Une \textbf{couche de convolution} à 2 dimensions avec \textbf{64} filtres, un noyau de taille \textbf{3x3} et la fonction de correction \textbf{RELu}.\\
             $
             \downarrow
             $\\
@@ -170,7 +170,12 @@
         L'avantage de cette technique c'est qu'elle permet de reconnaître des objets en temps réel dans, par exemple, une vidéo. Dans cette partie, on évoque la manière dont on génère les données qui servent comme entrée pour un modèle pré-entraîné fourni par l'API de détection d'objets de TensorFlow.
         \subsubsection{Une anomalie est un objet}
         Après avoir consulter le fonctionnement basique de l'API de détection d'objets, on a constaté que celle-ci demande un format très particulier (un fichier binaire TFRecord) ainsi qu'une configuration assez compliquée (un fichier .config avec les configurations possibles du modèle). Les anomalies présent dans une image doivent être identifiées et isolées chacune dans sa propre bounding box. L'outil qui permet de faire cette manipulation porte le nom de \textit{LabelImg}. Cet outil permet de générer un fichier csv comportant les colonnes suivantes: \textit{filename} (le nom de fichier d'image où l'anomalie se trouve), \textit{width} (la largeur de l'image), \textit{height} (la hauteur de l'image), \textit{class} (la classe/libellé/étiquette de l'image, \textbf{malfunction} dans notre cas), \textit{xmin} (coordonnée x du 1er point de la bounding box), \textit{ymin} (coordonnée y du 1er point de la bounding box), \textit{xmax} (coordonnée x du 2ème point de la bounding box) et \textit{ymax} (coordonnée y du 2ème point de la bounding box). Cependant, pour générer une énorme base de données d'anomalies isolées, il en faut beaucoup de temps et une main d'œuvre importante. On présente une autre méthode pour résoudre ce problème.
-        \newline
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=\textwidth]{images/od_datagen.jpg}
+            \caption{Pipeline de génération de données pour l'entraînement du modèle de TensorFlow Object Detection API}
+            \label{}
+        \end{figure}
         \indent Vu qu'on a une version stable d'un système à temps réel ainsi qu'un version avec des anomalies, à l'aide de la librairie de traitement d'images OpenCV, on procède aux manipulations suivantes:
         \newline
         Soit une simulation $S$ d'un système à temps réel commençant à un temps $t$, ayant une durée $d$. On capture la courbe d'état des deux version (stable et avec anomalies) de $t$ à $t+d$ en tant qu'image.
@@ -202,6 +207,7 @@
                 \caption{La figure à gauche représente l'image issue de la matrice de pixel $M_{diff}$ après l'application du filtre d'érosion, à droite le résultat des opérations 3, 4 et 5 de l'algorithme ci-dessus.}
             \end{subfigure}\par\medskip
         \end{figure}
+        \subsubsection{}
         
     \section{Analyses et Interprétations}
     \section{Conclusion}

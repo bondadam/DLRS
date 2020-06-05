@@ -503,7 +503,7 @@ class RealtimeSystem:
         while self.offset < the_end:
             plt.clf() # Mandatory call, otherwise the figure will not take into account the scale.
             self.fig = self.render_scaled()
-            self.fig.savefig(os.path.join(FRAMES_DIR, "{}_{}.png".format(folders[-1], i)))
+            self.fig.savefig(os.path.join(FRAMES_DIR, "{}_{}.png".format(folders[-1], i)), dpi = 24)
             self.offset += self.dt_per_sample if not unique else self.scale
             i += 1
             print("{} frames generation: {:.1f}% done.".format("/".join(folders), (self.offset * 100) / the_end))

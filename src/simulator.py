@@ -509,8 +509,13 @@ class RealtimeSystem:
             print("{} frames generation: {:.1f}% done.".format("/".join(folders), (self.offset * 100) / the_end))
 
 
-    def to_csv(self):
-        pass
+    def to_csv(self, timeseries_id = 0, filename="data.csv", append = False):
+        X,Y = self.data()
+        mode = 'a' if append else 'w'
+        with open(filename, mode) as csv_file:
+            for i in range(len(X)):
+                csv_file.write("{},{},{}\n".format(timeseries_id, X[i],Y[i]))
+        print("CSV generation complete.\n")
     
     def render(self, color='red'):
         X, Y = self.data()
@@ -607,6 +612,7 @@ if __name__ == "__main__":
                           StateFactory.random(10, rest, active, with_random_impulses=False, max_impulses_per_state=0))
 
     rlts.generate_frames(["valid","stable"])
+    rlts.to_csv(0, "data.csv", False)
 
     rlts = RealtimeSystem(realtime_tick,
                           delta_time_per_sample,
@@ -617,6 +623,7 @@ if __name__ == "__main__":
                           StateFactory.random(10, rest, active, with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
 
     rlts.generate_frames(["valid", "malfunction"])
+    rlts.to_csv(1, "data.csv", True)
 
     rlts = RealtimeSystem(realtime_tick,
                           delta_time_per_sample,
@@ -637,3 +644,4 @@ if __name__ == "__main__":
                           StateFactory.random(200, rest, active, with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
 
     rlts.generate_frames(["object_detection", "malfunction"], unique=True)
+

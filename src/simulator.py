@@ -6,7 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.animation as anim
 import pandas as pd
-from random import randint, random, randrange
+from random import choice, randint, random, randrange, uniform
 import os
 from shutil import rmtree
 
@@ -509,13 +509,15 @@ class RealtimeSystem:
             print("{} frames generation: {:.1f}% done.".format("/".join(folders), (self.offset * 100) / the_end))
 
 
-    def to_csv(self, timeseries_id = 0, filename="data.csv", append = False):
+    def to_csv(self, timeseries_id = 0, append = False,  filename="data.csv",):
         X,Y = self.data()
         mode = 'a' if append else 'w'
         with open(filename, mode) as csv_file:
+            if mode == 'w':
+                csv_file.write("id,time,F_x\n")
             for i in range(len(X)):
                 csv_file.write("{},{},{}\n".format(timeseries_id, X[i],Y[i]))
-        print("CSV generation complete.\n")
+        print("CSV generation for id {} complete.\n".format(timeseries_id))
     
     def render(self, color='red'):
         X, Y = self.data()
@@ -583,6 +585,28 @@ if __name__ == "__main__":
     # 3 states, with impulses 
     rest, active = states = [State("Rest", 1200, 10, []), State("Active", 1200, 50,[])]
 
+    nb_series = 35
+    y_index = []
+    for i in range(nb_series):
+        malfunction = random() > 0.8
+        y_index.append(1 if malfunction else 0)
+        
+        rlts = RealtimeSystem(realtime_tick,
+                              delta_time_per_sample,
+                              scale,
+                              offset,
+                              TransitionType("sine", randint(2,12)),
+                              Noise("gaussian", uniform(0,2)),
+                              StateFactory.random(randint(3, 30),
+                                                  State("Rest", randint(1,10)*200, randint(0,15), []),
+                                                  State("Active", randint(1,10)*200, randint(40,60), []),
+                                                  with_random_impulses = True if malfunction else False))
+        rlts.to_csv(i, i != 0)
+    with open("y_index.csv", "w") as y_csv:
+        for i in range(nb_series):
+            y_csv.write("{},{}\n".format(i, y_index[i]))
+                                        
+                                                  
     rlts = RealtimeSystem(realtime_tick,
                           delta_time_per_sample,
                           scale,
@@ -612,7 +636,6 @@ if __name__ == "__main__":
                           StateFactory.random(10, rest, active, with_random_impulses=False, max_impulses_per_state=0))
 
     rlts.generate_frames(["valid","stable"])
-    rlts.to_csv(0, "data.csv", False)
 
     rlts = RealtimeSystem(realtime_tick,
                           delta_time_per_sample,
@@ -623,7 +646,6 @@ if __name__ == "__main__":
                           StateFactory.random(10, rest, active, with_random_impulses=True, random_frequency=0.8, max_impulses_per_state=10))
 
     rlts.generate_frames(["valid", "malfunction"])
-    rlts.to_csv(1, "data.csv", True)
 
     rlts = RealtimeSystem(realtime_tick,
                           delta_time_per_sample,

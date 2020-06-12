@@ -260,9 +260,9 @@ src/**/*.png
 
 **/.ipynb_checkpoints/*
 
-doc/rapport/*
-!doc/rapport/**.png
-!doc/rapport/**.jpg
-!doc/rapport/**.jpeg
-!doc/rapport/**.tex
-!doc/rapport/**.pdf
+doc/rapport/**/*
+!doc/rapport/**/*.png
+!doc/rapport/**/*.jpg
+!doc/rapport/**/*.jpeg
+!doc/rapport/**/*.tex
+!doc/rapport/**/*.pdf

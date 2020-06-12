@@ -237,6 +237,23 @@
         \label{}
     \end{figure}
     L'erreur nous indique clairement que les métriques d'accuracy et de loss ne sont pas indiquant de la performance du modèle. Avec un taux d'erreur important, on peut conclure que le modèle overfit et qu'il n'est apte qu'à classifier les instances qu'il connaît déjà d'où les fluctuations de l'erreur pour l'ensemble de validation.
+    \subsection{Détection d'anomalies en tant qu'objets}
+    Pour cette approche, on obtient des résultats intéressants. Le modèle reconnaît et isole bien les anomalies avec une certaine probabilité.
+    \begin{figure}[H]
+        \centering
+        \begin{subfigure}{\linewidth}
+            \includegraphics[width=.5\textwidth]{images/od_1.png}
+            \hfill
+            \includegraphics[width=.5\textwidth]{images/od_2.png}
+        \end{subfigure}
+    \end{figure}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=.5\textwidth]{images/od_3.png}
+
+        \caption{La détection d'anomalies sur des images différentes de ceux de l'ensemble d'entraînement semble correcte mais pas parfaite.}
+        \label{}
+    \end{figure}
     \section{Conclusion}
 
 \renewcommand\refname{7\indent Références}

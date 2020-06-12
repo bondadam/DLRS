@@ -20,6 +20,8 @@
 \usepackage{float}
 \usepackage{enumitem}
 \usepackage{subcaption}
+\usepackage{hyperref}
+
 
 
 \definecolor{ocre}{RGB}{243,102,25}
@@ -106,7 +108,7 @@
         \subsection{Génération des données}
     \section{Deep Learning avec TensorFlow}
         \subsection{Approche naïve avec CNN}
-        La première idée qu'on a eu était d'utiliser le réseau neuronal convolutif de TensorFlow (convolutional neural networks, abbrv: cnn) pour l'entraîner à reconnaître les images provenant d'un système stable ainsi qu'un système à forte perturbations admettant plusieurs anomalies. Vu que précédemment on a déjà généré 1000 images pour chacune de nos classes \textbf{stable} et \textbf{malfunction}, on les a alors importées pour être pré-traitées avant de les brancher au réseau. Dans le prétraitement, on redimensionne la taille de l'image (originalement 640x480) à 250x250. Vu que la couleur de l'image n'a pas d'importance, on redéfini sa gamme de couleur comme étant du \textit{grayscale}. Cette manipulation a le bénéfice d'avoir un tensor de dimension (250x250x1) au lieu de (250x250x3). On défini le nombre d'\textit{epochs} comme étant égale à 100 et le nombre de \textit{batchs} de données à être traité simultanément dans le réseau de neurones est égale à 8. Notre modèle TensorFlow a le pipeline décrit ci-dessous:
+        La première idée qu'on a eu était d'utiliser le réseau neuronal convolutif de TensorFlow (convolutional neural networks, abbrv: cnn) pour l'entraîner à reconnaître les images provenant d'un système stable ainsi qu'un système à forte perturbations admettant plusieurs anomalies. Vu que précédemment on a déjà généré 1000 images pour chacune de nos classes \textbf{stable} et \textbf{malfunction}, on les a alors importées pour être pré-traitées avant de les brancher au réseau. Dans le prétraitement, on redimensionne la taille de l'image (originalement 640x480) à 250x250. Vu que la couleur de l'image n'a pas d'importance, on redéfini sa gamme de couleur comme étant du \textit{grayscale}. Cette manipulation a le bénéfice d'avoir un tensor de dimension (250x250x1) au lieu de (250x250x3). On défini le nombre d'\textit{epochs} comme étant égale à 10 et le nombre de \textit{batchs} de données à être traité simultanément dans le réseau de neurones est égale à 10. Notre modèle TensorFlow a le pipeline décrit ci-dessous:
         \begin{center}
             Une \textbf{couche de convolution} à 2 dimensions avec \textbf{16} filtres, un noyau de taille \textbf{3x3} et la fonction de correction \textbf{RELu}. \\
             $
@@ -160,7 +162,7 @@
         Dans la section 5, on explique les résultats qu'on a eu suivant cette approche et pourquoi elle est naïve.
         \subsection{Génération des features avec TSFresh}
         \subsection{Détection d'anomalies en tant qu'objets}
-        Dans le but de couvrir d'autres approches intéressantes, on s'est mit a chercher les techniques les plus récentes pour traiter les deux thèmes de ce travail de recherche: \textit{détection d'anomalies} et \textit{temps réel}. Une techniques qui nous a marqué le plus est celle de la détection d'objets. L'article Wikipédia en anglais parle de ce sujet. On peut aussi voir dans la figure ci-dessous un exemple d'une telle détection d'objets réels.
+        Dans le but de couvrir d'autres approches intéressantes, on s'est mit a chercher les techniques les plus récentes pour traiter les deux thèmes de ce travail de recherche: \textit{détection d'anomalies} et \textit{temps réel}. Une techniques qui nous a marqué le plus est celle de la détection d'objets. L'article Wikipédia \cite{odwikipedia} en anglais parle de ce sujet. On peut aussi voir dans la figure ci-dessous un exemple d'une telle détection d'objets réels.
         \begin{figure}[H]
             \centering
             \includegraphics[width=.8\textwidth]{images/real_objects.jpg}
@@ -207,8 +209,40 @@
                 \caption{La figure à gauche représente l'image issue de la matrice de pixel $M_{diff}$ après l'application du filtre d'érosion, à droite le résultat des opérations 3, 4 et 5 de l'algorithme ci-dessus.}
             \end{subfigure}\par\medskip
         \end{figure}
-        \subsubsection{}
-        
+        \subsubsection{Entraînement du modèle}
+        TensorFlow Object Detection API offre plusieurs modèles pré-entraînés. Pour notre entraînement, on a opté pour le modèle \textbf{ssd\_mobilenet\_v1\_coco}\cite{pretrainedmodel}. Ce dernier offre une latence de détection de 30ms et un score mAP (mean Average Precision) de 21. Pour la détection d'objets en général, un compromis entre précision et vitesse est à envisager. Après avoir modifier la configuration de ce modèle pour la prise en compte de nos données (les deux fichiers d'entraînement et de test en format TFRecord), on le lance avec un nombre de batch de $12$ et un nombre maximale d'itérations à $20 000$ pour ne pas avoir à entraîner le modèle indéfiniment. L'éxecution a été faite avec une machine possédant un processeur Intel i5 avec une fréquance de $2.3GHz$ et une carte graphique NVIDIA GTX960M doté de la technologie CUDA. En premier lieu, on a essayé de lancer l'entraînement directement sur le processeur. On constate un écroulement de $12$ secondes entre chaque itération du modèle. Si on le laissait tourner jusqu'à la fin, cela prendra à peu près $67$ heures. On a finalement opté pour un entraînement sur la carte graphique qui, pour chaque itération, prend $0.5$ secondes soit $3$ heures en total. L'API récolte aussi des statistiques concernant le modèle après chaque centaines d'itérations, ce qui consomme à son tour considérablement le temps d'éxecution.
+        \newline
+        \indent L'entraînement a duré $\sim 11$ heures. Dans la section 5, on discute des résultats qu'on a eu ainsi du potentiel de l'utilisation d'une telle technique pour résoudre le problème de l'entreprise.
+
     \section{Analyses et Interprétations}
+    \subsection{Approche naïve avec CNN}
+    Le choix des hyperparamètres du modèle était directement influencé par la limite de ce que la machine peut gérer. Le modèle qu'on a choisit produit 33 millions de paramètres (poids du réseau de neurones + bias). Mettre une couche de plus avec, disant, 128 filtres, sort l'exception \textit{ResourceExhausted} qui indique que la mémoire ne suffit pas pour entraîner le modèle.
+    \newline
+    \indent Les résultats qu'on a eu concernant cette approche étaient un peu décevante. Le modèle conçu overfit. Si on considère que les mesures d'accuracy et de loss, il peut sembler que le modèle est plus ou moins bon pour reconnaître les images avec anomalies de ceux sans anomalies. Le point décisif était de voir l'erreur. Ci-dessous les courbes associées pour chaque mesures ainsi que leurs corrélations.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=.8\textwidth]{images/cnn_acc_loss.png}
+        \caption{La figure de gauche représente l'accuracy par rapport à nombre d'epochs, celle de droite représente le loss. On observe bien une accuracy entre 0.9 et 0.97 pour les ensembles d'images d'entraînement et de validation ainsi qu'une pente de perte descendante et proche de 0 pour les deux aussi.}
+        \label{}
+    \end{figure}
+    La fonction d'erreur utilisé est $MSE(y) = \dfrac{1}{n}\sum\limits_{y \in Y} (y - \hat{y})^2$ avec $\hat{y}=\dfrac{1}{n}\sum\limits_{y \in Y} y$
+    \begin{figure}[H]
+        \centering
+        \begin{subfigure}{\linewidth}
+            \includegraphics[width=.49\textwidth]{images/cnn_mse_acc.png}
+            \hfill
+            \includegraphics[width=.47\textwidth]{images/cnn_loss_mse.png}
+        \end{subfigure}
+        \caption{La figure à gauche resprésente l'erreur en fonction de l'accuracy et celle de gauche la perte par rapport à l'erreur. On constate que l'erreur varie d'une manière très irrégulière pour l'ensemble de validation et de manière exponentielle dans l'ensemble d'entraînement pour la figure gauche, de plus, dans celle de droite on observe que quand la perte est converge vers 0, l'erreur augmente considérablement.}
+        \label{}
+    \end{figure}
+    L'erreur nous indique clairement que les métriques d'accuracy et de loss ne sont pas indiquant de la performance du modèle. Avec un taux d'erreur important, on peut conclure que le modèle overfit et qu'il n'est apte qu'à classifier les instances qu'il connaît déjà d'où les fluctuations de l'erreur pour l'ensemble de validation.
     \section{Conclusion}
+
+\renewcommand\refname{7\indent Références}
+\begin{thebibliography}{1}
+\bibitem{odwikipedia} \href{https://en.wikipedia.org/wiki/Object\_detection}{Wikipedia, Object Detection}
+\bibitem{pretrainedmodel} \href{https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md#coco-trained-models}{TensorFlow, \textit{models} repository, Tensorflow detection model zoo.}
+\end{thebibliography}
+
 \end{document}

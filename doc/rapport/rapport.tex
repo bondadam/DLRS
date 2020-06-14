@@ -210,22 +210,22 @@
             \end{subfigure}\par\medskip
         \end{figure}
         \subsubsection{Entraînement du modèle}
-        TensorFlow Object Detection API offre plusieurs modèles pré-entraînés. Pour notre entraînement, on a opté pour le modèle \textbf{ssd\_mobilenet\_v1\_coco}\cite{pretrainedmodel}. Ce dernier offre une latence de détection de 30ms et un score mAP (mean Average Precision) de 21. Pour la détection d'objets en général, un compromis entre précision et vitesse est à envisager. Après avoir modifier la configuration de ce modèle pour la prise en compte de nos données (les deux fichiers d'entraînement et de test en format TFRecord), on le lance avec un nombre de batch de $12$ et un nombre maximale d'itérations à $20 000$ pour ne pas avoir à entraîner le modèle indéfiniment. L'éxecution a été faite avec une machine possédant un processeur Intel i5 avec une fréquance de $2.3GHz$ et une carte graphique NVIDIA GTX960M doté de la technologie CUDA. En premier lieu, on a essayé de lancer l'entraînement directement sur le processeur. On constate un écroulement de $12$ secondes entre chaque itération du modèle. Si on le laissait tourner jusqu'à la fin, cela prendra à peu près $67$ heures. On a finalement opté pour un entraînement sur la carte graphique qui, pour chaque itération, prend $0.5$ secondes soit $3$ heures en total. L'API récolte aussi des statistiques concernant le modèle après chaque centaines d'itérations, ce qui consomme à son tour considérablement le temps d'éxecution.
+        TensorFlow Object Detection API offre plusieurs modèles pré-entraînés. Pour notre entraînement, on a opté pour le modèle \textbf{ssd\_mobilenet\_v1\_coco}\cite{pretrainedmodel} qui utilise MobileNet développé par Google. Ce dernier offre une latence de détection de 30ms et un score mAP (mean Average Precision) de 21. Pour la détection d'objets en général, un compromis entre précision et vitesse est à envisager. Après avoir modifier la configuration de ce modèle pour la prise en compte de nos données (les deux fichiers d'entraînement et de test en format TFRecord), on le lance avec un nombre de batch de $12$ et un nombre maximale d'itérations à la $15 000$ pour ne pas avoir à entraîner le modèle indéfiniment. L'éxecution a été faite avec une machine possédant un processeur Intel i5 avec une fréquance de $2.3GHz$ et une carte graphique NVIDIA GTX960M doté de la technologie CUDA et 8Go de RAM. Sous limite de mémoire, on a réussi à n'avoir que 320 bounding boxes pour l'exécution du modèle, dont 60 sont des données de test/validation et 260 sont utilisés par le modèle pour du fine-tuning d'entraînement. En premier lieu, on a essayé de lancer l'entraînement directement sur le processeur. On constate un écroulement de $12$ secondes entre chaque itération du modèle. Si on le laissait tourner jusqu'à la fin, cela prendra à peu près $67$ heures. On a finalement opté pour un entraînement sur la carte graphique qui, pour chaque itération, prend $0.5$ secondes soit $3$ heures en total. L'API récolte aussi des statistiques concernant le modèle après chaque centaines d'itérations, ce qui consomme à son tour considérablement le temps d'éxecution.
         \newline
         \indent L'entraînement a duré $\sim 11$ heures. Dans la section 5, on discute des résultats qu'on a eu ainsi du potentiel de l'utilisation d'une telle technique pour résoudre le problème de l'entreprise.
 
     \section{Analyses et Interprétations}
     \subsection{Approche naïve avec CNN}
-    Le choix des hyperparamètres du modèle était directement influencé par la limite de ce que la machine peut gérer. Le modèle qu'on a choisit produit 33 millions de paramètres (poids du réseau de neurones + bias). Mettre une couche de plus avec, disant, 128 filtres, sort l'exception \textit{ResourceExhausted} qui indique que la mémoire ne suffit pas pour entraîner le modèle.
+    Le choix des hyperparamètres du modèle était directement influencé par la limite de ce que nos machines personnelles peuvent gérer. Le modèle qu'on a choisit produit 33 millions de paramètres (poids du réseau de neurones + bias). Mettre une couche de plus avec, disant, 128 filtres, sort l'exception \textit{ResourceExhausted} qui indique que la mémoire ne suffit pas pour entraîner le modèle.
     \newline
-    \indent Les résultats qu'on a eu concernant cette approche étaient un peu décevante. Le modèle conçu overfit. Si on considère que les mesures d'accuracy et de loss, il peut sembler que le modèle est plus ou moins bon pour reconnaître les images avec anomalies de ceux sans anomalies. Le point décisif était de voir l'erreur. Ci-dessous les courbes associées pour chaque mesures ainsi que leurs corrélations.
+    \indent Les résultats qu'on a eu concernant cette approche étaient un peu décevante. Le modèle conçu overfit. Si on considère que les mesures d'accuracy et de loss, il peut sembler que le modèle est plus ou moins bon pour reconnaître les images avec anomalies de ceux sans anomalies. Le point décisif était de voir l'erreur. Ci-dessous les courbes associées pour chaque mesure ainsi que leurs corrélations. La fonction de loss utilisée est \textit{Binary Cross Entropy} : $BCE = -\dfrac{1}{N} \sum\limits_{y \in Y} y \times log(p(y)) + (1-y) \times log(1-p(y))$
     \begin{figure}[H]
         \centering
         \includegraphics[width=.8\textwidth]{images/cnn_acc_loss.png}
         \caption{La figure de gauche représente l'accuracy par rapport à nombre d'epochs, celle de droite représente le loss. On observe bien une accuracy entre 0.9 et 0.97 pour les ensembles d'images d'entraînement et de validation ainsi qu'une pente de perte descendante et proche de 0 pour les deux aussi.}
         \label{}
     \end{figure}
-    La fonction d'erreur utilisé est $MSE(y) = \dfrac{1}{n}\sum\limits_{y \in Y} (y - \hat{y})^2$ avec $\hat{y}=\dfrac{1}{n}\sum\limits_{y \in Y} y$
+    La fonction d'erreur utilisé est $MSE = \dfrac{1}{n}\sum\limits_{y \in Y} (y - \hat{y})^2$ avec $\hat{y}=\dfrac{1}{n}\sum\limits_{y \in Y} y$
     \begin{figure}[H]
         \centering
         \begin{subfigure}{\linewidth}
@@ -250,10 +250,24 @@
     \begin{figure}[H]
         \centering
         \includegraphics[width=.5\textwidth]{images/od_3.png}
-
         \caption{La détection d'anomalies sur des images différentes de ceux de l'ensemble d'entraînement semble correcte mais pas parfaite.}
         \label{}
     \end{figure}
+    À l'aide de l'application de surveillance de modèles TensorBoard, on peut extraire quelques métriques en liaison avec l'entraînement en temps réel. Cependant, l'application n'expose que des mesures de pertes et d'autres métriques qui ne sont pas documentées. Pour les mesures de perte, on a les résultats suivant:
+    \begin{figure}[H]
+        \centering
+        \begin{subfigure}{\linewidth}
+            \includegraphics[width=.5\textwidth]{images/od_loc_loss.png}
+            \hfill
+            \includegraphics[width=.5\textwidth]{images/od_cla_loss.png}
+        \end{subfigure}
+        \caption{À gauche, la perte liée à la prédiction des coordonnées des bounding boxes qui entourent les anomalies en fonction du nombre d'itérations écroulé. À droite, celle lié aux prédiction de classification; dire que la partie de l'image entouré présente bien une anomalie ou pas.}
+    \end{figure}
+    Pour les deux courbes, on observe bien une pente de perte descendante. Celle de localisation est plus ou moins proche de 0, mais celle de classification est entre 1 et 2 à $15000^{\text{ème}}$ itération. Selon la documentation sur la configuration du modèle, l'API dit qu'un nombre d'itérations de $200000$ est recommandé afin d'obtenir une perte entre 0 et 1.
+    \newline
+    \indent On n'a pas de résultats conclusifs sur la précision et la fidélité du modèle. La perte nous nous donnes pas assez d'informations comme on a pu s'aperçevoir dans le modèle CNN naïve. De plus, ni le nombre d'itérations, ni le nombre de données ne sont suffisant pour prendre en considération toutes les formes possibles d'une anomalie. L'avantage de cette approche sont quand même à prendre en considération. L'API de Détection d'Objets de TensorFlow n'est pas assez documenté pour faire des expériences plus sophistiquées avec des résultats pertinants et analysables. La migration de la version 1 à la version 2 a donné naissance à plusieurs bugs ainsi que plusieurs modules obsolètes qui demandent des contournements pour qu'ils fonctionnent à nouveau. Il sera peut-être plus judicieux de faire jouer la concurrence et de regarder les résultats qu'on obtient avec une librairie de Deep Learning comme PyTorch qui est plutôt plus stable et de plus en plus adoptée.
+    \newline
+    \indent Néanmoins, une détection d'anomalies en temps réel est très utile au sein d'un système, aussi, à temps réel. L'entreprise peut opté pour cette approche dans le cadre où celle-ci est prouvé être fonctionnel avec des analyses et des métriques qui le montre et que nous avons pas eu les ressources pour le faire.
     \section{Conclusion}
 
 \renewcommand\refname{7\indent Références}

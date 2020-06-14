@@ -585,7 +585,7 @@ if __name__ == "__main__":
     # 3 states, with impulses 
     rest, active = states = [State("Rest", 1200, 10, []), State("Active", 1200, 50,[])]
 
-    nb_series = 35
+    nb_series = 1024
     y_index = []
     for i in range(nb_series):
         malfunction = random() > 0.8

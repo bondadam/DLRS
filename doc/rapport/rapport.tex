@@ -161,11 +161,47 @@
         \end{itemize}
         Dans la section 5, on explique les résultats qu'on a eu suivant cette approche et pourquoi elle est naïve.
         \subsection{Génération des features avec TSFresh}
+        Afin d'accompagner nos méthodes de détection d'anomalies, nous avons cherché à trouver des approches permettant de détecter avec succès des anomalies sans devoir nourrir le modèle d'un ensemble de données conséquents, que ce soit des milliers de datapoint au format texte ou une image.
+        Nous avons pour cela utilisé une libraire Python appelée TSFresh. TSFresh est un outil spécialement conçu pour analyser des séries temporelles en calculant un grand nombre de caractéristiques communes aux séries temporelles\cite{tsfreshfeatures}. La librairie cherche par exemple les coefficients de la série de fourier representée par le signal (fft\_coefficient), où bien le pourcentage de valeurs qui sont présente plus d'une fois, etc. Une fois ces features calculées, TSFresh utilise chacune des features individuellement en essayant de déterminer son efficacité pour prédire correctement la classification d'une série, et lui assigne une p-value en conséquence. En fonction de cette p-value, un algorithme statistique décide de qualifier cette feature comme pertinente ou non.
+        
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=.8\textwidth]{images/features_extraction.png}
+            \caption{Image de la documentation TSFresh permettant de visualiser la sélection de features à partir des séries temporelles en entrée.}
+            \label{}
+        \end{figure}
+        
+        
+        Nous avons d'abord tenté de réaliser cette analyse sur une matrice de pixels représentant l'image. Ainsi à chaque moment T équivaut une colonne de pixels blancs ou rouge, tous les pixels inférieurs à la valeur de l'amplitude étant coloriés en rouge et les autres laissés blancs. Nous avons rapidement abandonné cette idée puisqu'en plus de ne pas apporter plus d'informations par rapport à une simple série où équivaut à chaque moment T une valeur d'amplitude, elle apporte énormément d'informations superflues que TSFresh doit trier, et qui ralentissent le processus et rendent les résultats moins efficaces. Nous avons donc implémenté dans le simulateur un moyen d'exporter dans un fichier texte de nombreuses séries générées aléatoirement et identifiées selon si elles présentent des anomalies ou non.
+        
+        Une fois cela réalisé, nous avons donné les 1024 séries résultantes au logiciel pour calculer les coefficients. TSFresh a calculé plus de 800 features, dont il a considéré 305 commes pertinentes.
+        
+\begin{figure}[H]
+            \centering
+            \includegraphics[width=0.35\textwidth]{images/features_pvalue.png}
+            \caption{Table des P-Values des 10 features les plus significatives.}
+            \label{}
+        \end{figure}
+
+        Parmi les 305 features, plus de la moitié étaient des coefficients d'une transformée de Fourier, et 48 parmi les 50 premières. Comme on peut le voir sur la table, les premières features et particulièrement la toute première, ont des P-Value extrêmement basses, un ordre de grandeur plus petites que les suivantes.
+        
+        Nous avons vérifié la pertinence de ces features en entraînant deux arbres de décision pour classer les séries temporelles en entrée dans deux classes : stable et malfonction.
+        
+        Nous avons donné au premier arbre de décision les données brutes, et il a obtenu une précision de 85\% sur les données de test. Nous avons donné aux second arbre uniquement les features extraites par TSFresh et la précision est montée à 90\%.
+        
+        Nous avons alors décidé de tester ces résultats en comparant la précision d'arbres de décisions qui prendraient uniquement en compte les N premières features afin d'essayer d'obtenir un ensemble de features aussi restreint que possible pouvant rendre la prédiction rapide. 
+        
+        Les résultats obtenus ont été que bien qu'une tendance se dégage à une plus grande précision plus on prend de features, la différence n'est pas énorme. On obtient 90\% de précision avec les 100 premières features (soit autant qu'avec les 305 features pertinentes), mais la précision est déja de 85\% avec uniquement la première feature, et de  89% avec les cinq premières.
+        
+        Afin de limiter l'overfit nous avons aussi vérifié et limité la profondeur maximum des arbres de décisions, mais nous nous sommes rendu compte qu'en réalité même avec toutes les features pertinentes, la profondeur de l'arbre ne dépassait jamais 18. C'est à dire que dans tous les cas, l'arbre de décision choisit d'utiliser un nombre restreint de features.
+        
+        Ces résultats confirment l'impact énorme des premiers features sélectionnés qui ont des P-Values étant plus petites d'un ordre de grandeur.
+    
         \subsection{Détection d'anomalies en tant qu'objets}
         Dans le but de couvrir d'autres approches intéressantes, on s'est mit a chercher les techniques les plus récentes pour traiter les deux thèmes de ce travail de recherche: \textit{détection d'anomalies} et \textit{temps réel}. Une techniques qui nous a marqué le plus est celle de la détection d'objets. L'article Wikipédia \cite{odwikipedia} en anglais parle de ce sujet. On peut aussi voir dans la figure ci-dessous un exemple d'une telle détection d'objets réels.
         \begin{figure}[H]
             \centering
-            \includegraphics[width=.8\textwidth]{images/real_objects.jpg}
+            \includegraphics[width=1\textwidth]{images/real_objects.jpg}
             \caption{Image wikipédia qui montre les résultats obtenus d'une détection d'objets à l'aide de l'algorithme YOLOv3 (You Only Look Once) ainsi que le module DNN d'OpenCV. Ce modèle peut détecter jusqu'à 80 objets.}
             \label{}
         \end{figure}
@@ -237,6 +273,28 @@
         \label{}
     \end{figure}
     L'erreur nous indique clairement que les métriques d'accuracy et de loss ne sont pas indiquant de la performance du modèle. Avec un taux d'erreur important, on peut conclure que le modèle overfit et qu'il n'est apte qu'à classifier les instances qu'il connaît déjà d'où les fluctuations de l'erreur pour l'ensemble de validation.
+    
+    \subsection{Extraction des features avec TSFresh}
+
+      Nous avons constaté lorsque nous avons extrait les features avec TSFresh que la majorité des features les plus pertinentes étaient des coefficient de séries de Fourier.
+        Nous pensons que cela est dû au fait que nos séries se généralisent très bien en des additions de sinuisoïdales. En effet, une série sans malfonctions est en réalité une répétition d'états actifs et au repos ayant une amplitude à peu près stable (en fonction du bruit); elle ressemble à un signal carré (imparfait, puisque les transitions entre les états ne sont pas instantanées).
+        
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.3\textwidth]{images/signal_carre.png}
+            \caption{Image de Wikipédia illustrant les quatre premières sommes partielles d'une série de Fourier pour approximer un signal carré.}
+            \label{}
+        \end{figure}
+        
+        En revanche, lorsque des malfonctions sont présentes dans une série, elles génèrent de plus nombreux pics haut et bas d'amplitudes à intervalles irréguliers. Ces nombreux pics empêchent d'obtenir une image relativement proche de notre courbe uniquement avec les coefficients de basse fréquence de la série de Fourier. C'est donc un indicateur simple permettant de déterminer si une série temporelle représentant la pression des senseurs présente des malfonctions ou non.
+        
+        Il faut cependant considérer que cela est vrai à condition que l'hypothèse que nosu avons fait dans notre simulateur en fonction des données réelles auxquelles nous avons rapidement eu accès se vérifie: Les périodes des états actifs et au repos sont relativement stables. En effet, il est beaucoup plus difficile d'approximer un signal carré irrégulier avec seulement quelques coefficients d'une série de Fourier. De plus, il devient alors difficile de dissocier des pics dûs à des malfonctions de simples changement d'états anticipés.
+        
+    Un autre aspect est que bien que nous avons trié les features en fonction de leur pouvoir prédictif, ces tests se font de façon individuelle sur chacune des features. Hors on ne peut pas exclure que certaines features soient plus ou moins efficaces dans certaines combinaisons. Ainsi, pour être sûr d'avoir l'ensemble réduit de N features le plus efficace, il faudrait tester toutes les permutations possibles et non seulement les N premiers, ce que nous n'avons pas fait pour des raisons de temps de calcul.
+    
+    Enfin, bien nous ayons tenté de limiter l'overfit autant que possible, en l'absence d'un jeu de données réel conséquent fourni par la société, nous ne pouvons être confiants de nos résultats uniquement sur les séries temporelles générées par notre simulateur.
+        
+        
     \subsection{Détection d'anomalies en tant qu'objets}
     Pour cette approche, on obtient des résultats intéressants. Le modèle reconnaît et isole bien les anomalies avec une certaine probabilité.
     \begin{figure}[H]
@@ -274,6 +332,7 @@
 \begin{thebibliography}{1}
 \bibitem{odwikipedia} \href{https://en.wikipedia.org/wiki/Object\_detection}{Wikipedia, Object Detection}
 \bibitem{pretrainedmodel} \href{https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md#coco-trained-models}{TensorFlow, \textit{models} repository, Tensorflow detection model zoo.}
+\bibitem{tsfreshfeatures} \href{https://tsfresh.readthedocs.io/en/latest/text/list_of_features.html}{Liste des features calculées par TSFresh, TSFresh documentation}
 \end{thebibliography}
 
 \end{document}

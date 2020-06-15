@@ -588,7 +588,7 @@ if __name__ == "__main__":
     nb_series = 1024
     y_index = []
     for i in range(nb_series):
-        malfunction = random() > 0.8
+        malfunction = random() > 0.5
         y_index.append(1 if malfunction else 0)
         
         rlts = RealtimeSystem(realtime_tick,

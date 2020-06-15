@@ -236,19 +236,19 @@
         \end{enumerate}
 
 
-\begin{figure}
+\begin{figure}[H]
     \centering
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[t]{0.3\textwidth}
             \centering
             \includegraphics[width=1\linewidth]{images/od_stable.jpg}
             \caption{Figure A}
     \end{subfigure}%
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[t]{0.3\textwidth}
             \centering
             \includegraphics[width=1\linewidth]{images/od_malfunction.jpg}
             \caption{Figure B}
     \end{subfigure}
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[t]{0.3\textwidth}
             \centering
             \includegraphics[width=1\linewidth]{images/od_isolated.jpg}
             \caption{Figure C}
@@ -256,14 +256,14 @@
     \caption{La figure A représente l'image du système $stable$, la figure B le système $malfunction$ avec des fortes perturbations, et la figure C l'image résultante de l'opération de soustraction des matrices de pixels des deux: $M_{diff}$ (1. de l'algorithme ci-dessus)}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[H]
     \centering
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[t]{0.3\textwidth}
             \centering
             \includegraphics[width=1\linewidth]{images/od_erosion.jpg}
             \caption{Figure A}
     \end{subfigure}%
-    \begin{subfigure}[b]{0.5\textwidth}
+    \begin{subfigure}[t]{0.5\textwidth}
             \centering
             \includegraphics[width=1\linewidth]{images/od_identified.jpg}
             \caption{Figure B}
@@ -284,14 +284,14 @@
     
     \begin{figure}[H]
     \centering
-    \begin{subfigure}[b]{0.5\textwidth}
+    \begin{subfigure}[t]{0.5\textwidth}
             \centering
-            \includegraphics[width=0.75\linewidth]{images/cnn_acc_loss_1.png}
+            \includegraphics[width=0.5\linewidth]{images/cnn_acc_loss_1.png}
             \caption{\emph{Accuracy} par rapport au nombre d'\emph{epochs}}
     \end{subfigure}%
-    \begin{subfigure}[b]{0.5\textwidth}
+    \begin{subfigure}[t]{0.5\textwidth}
             \centering
-            \includegraphics[width=0.75\linewidth]{images/cnn_acc_loss_2.png}
+            \includegraphics[width=0.5\linewidth]{images/cnn_acc_loss_2.png}
             \caption{\emph{Loss} par rapport au nombre d'\emph{epochs}}
     \end{subfigure}
     \caption{On observe une \emph{accuracy} entre 0.9 et 0.97 pour les ensembles d'images d'entraînement et de validation ainsi qu'une pente de perte descendante et proche de 0 pour les deux aussi.}
@@ -301,12 +301,12 @@
     
     \begin{figure}[H]
     \centering
-    \begin{subfigure}[b]{0.5\textwidth}
+    \begin{subfigure}[t]{0.5\textwidth}
             \centering
             \includegraphics[width=1\linewidth]{images/cnn_mse_acc.png}
             \caption{Erreur en fonction de l'\emph{Accuracy}.}
     \end{subfigure}%
-    \begin{subfigure}[b]{0.5\textwidth}
+    \begin{subfigure}[t]{0.5\textwidth}
             \centering
             \includegraphics[width=0.95\linewidth]{images/cnn_loss_mse.png}
             \caption{Perte en fonction de l'erreur.}
@@ -324,7 +324,7 @@
         
         \begin{figure}[H]
             \centering
-            \includegraphics[width=1\textwidth]{images/signal_carre.png}
+            \includegraphics[width=0.75\textwidth]{images/signal_carre.png}
             \caption{Image de Wikipédia illustrant les quatre premières sommes partielles d'une série de Fourier pour approximer un signal carré.}
             \label{}
         \end{figure}
@@ -343,15 +343,15 @@
     
     \begin{figure}[H]
     \centering
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[t]{0.3\textwidth}
             \centering
             \includegraphics[width=1\textwidth]{images/od_1.png}
     \end{subfigure}%
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[t]{0.3\textwidth}
             \centering
             \includegraphics[width=1\textwidth]{images/od_2.png}
     \end{subfigure}
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[t]{0.3\textwidth}
             \centering
             \includegraphics[width=1\textwidth]{images/od_3.png}
     \end{subfigure}
@@ -362,12 +362,12 @@
     
     \begin{figure}[H]
     \centering
-    \begin{subfigure}[b]{0.5\textwidth}
+    \begin{subfigure}[t]{0.5\textwidth}
             \centering
             \includegraphics[width=1\textwidth]{images/od_loc_loss.png}
             \caption{Perte liée à la prédiction des coordonnées des \emph{bounding boxes} qui entourent les anomalies en fonction du nombre d'itérations écoulé.}
     \end{subfigure}%
-    \begin{subfigure}[b]{0.5\textwidth}
+    \begin{subfigure}[t]{0.5\textwidth}
             \centering
             \includegraphics[width=1\textwidth]{images/od_cla_loss.png}
            	\caption{Perte liée aux prédictions de classification (la partie de l'image entourée présente-t-elle bien une anomalie ?)}
@@ -404,18 +404,18 @@
 \section*{Glossaire}
 
 \begin{description}  
-\item Système à temps réel Description
-\item CNN Description
-\item TensorFlow Description
-\item epochs Description
-\item batchs Description
-\item pvalue Description
-\item object detection Description
-\item bounding box Description
-\item csv Description
-\item mAP Description
-\item fine-tuning Description
-\item overfit Description
+\item [Système à temps réel] Description
+\item [CNN] Description
+\item [TensorFlow] Description
+\item [Epoch] Description
+\item [Batch] Description
+\item [p-value] Description
+\item [Object Detection] Description
+\item [Bounding box] Description
+\item [csv] Description
+\item [mAP] Description
+\item [fine-tuning] Description
+\item [Overfit] Description
 \end{description}
 
 

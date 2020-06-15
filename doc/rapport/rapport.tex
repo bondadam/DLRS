@@ -429,15 +429,31 @@
     \indent Nous n'avons pas de résultats conclusifs sur la précision et la fidélité du modèle. La perte ne nous donne pas assez d'informations comme on a pu s'en rendre compte dans le modèle CNN naïf. De plus, ni le nombre d'itérations, ni le nombre de données ne sont suffisant pour prendre en considération toutes les formes possibles d'une anomalie. Les avantages de cette approche sont tout de même à prendre en considération. L'\emph{API} de Détection d'Objets de \textit{TensorFlow} n'est pas assez documentée pour faire des expériences plus sophistiquées avec des résultats pertinents et analysables. La migration de la version 1 à la version 2 a donné naissance à plusieurs bugs ainsi que plusieurs modules obsolètes qui demandent des contournements pour fonctionner à nouveau. Il sera peut-être plus judicieux de faire jouer la concurrence et de regarder les résultats qu'on obtient avec une librairie de Deep Learning comme PyTorch qui peut est plus stable et de plus en plus adoptée.
     \newline
     \indent Néanmoins, la détection d'anomalies en temps réel est très utile au sein d'un système à temps réel. L'entreprise pourrait opter pour cette approche si sa fonctionnalité est prouvée avec des analyses et des métriques qui le montre et que nous n'avons pas eu les ressources pour réaliser.
+    
+    \section{Gestion de Projet}
+    
+    Nous avons créé un dépôt pour le code sur \texttt{github}\cite{githubproject}. En parallèle de l'avancement sur le code, nous avons aussi créé un journal de bord que nous avons mis à jour à chaque avancée ou discussion avec notre encadrant. Nous avons choisi d'utiliser \texttt{Jupyter Notebook} pour tester nos approches de deep learning, car ce logiciel permet de tester et d'exécuter des bouts de code de manière modulaire, ce qui permet par exemple de changer en cours de route certains paramètres.
+    
+    En ce qui concerne la répartition du travail, nous avons tous les deux travaillés sur le simulateur, l'approche naïve et le journal de bord. Adam Bond s'est occupé de l'extraction des features avec TSFresh, tandis que Mohamed-Amine Romdhane a travaillé sur la détection d'anomalies en tant qu'objet.
+    
+    
+    
+    
     \section{Conclusion}
+    Nous avons essayé trois approches différentes de deep-learning pour identifier les anomalies dans les séries temporelles d'un système à temps réel. Parmi ces trois approches, nous avons disqualifié l'approche naïve car ses résultats n'étaient pas satisfaisants.
+    En revanche, nous pensons que les deux autres approches ont du potentiel pour résoudre le problème de l'entreprise. L'approche par série temporelle avec extraction de quelques features est peut-être plus efficace et rapide pour un système embarqué, mais l'approche par détection d'objets est plus originale et convient mieux au mode de fonctionnement actuel de l'entreprise.
+    Bien sûr, les résultats que nous avons obtenus sont conditionnés à une bonne modélisation des échantillons de données de l'entreprise de notre part. Si certaines hypothèses que nous avons faites par rapport à ces données ne se révélaient pas représentatives, nous ne pourrions pas nous assurer que nos résultats seraient aussi bons. En revanche, nous pensons que nos méthodes nous permettraient d'effectuer un processus similaire, et surtout concernant la détection d'objet, nous estimons que ses résultats sont applicables même si les réelles données de l'entreprise étaient différentes.
+	    Parmi les perspectives d'évolutions possibles, nous pensons qu'on pourrait explorer d'autres pré-traitements avant la détection d'objets; par exemple avec un filtre de détection de contours comme le filtre de sobel\cite{sobel}. Pour TSFresh, nous voudrions aussi étudier l'effet du regroupement de différentes features pour trouver une combinaison peut-être encore plus efficace que les N premiers.
+	    Enfin, nous pensons qu'il serait intéressant d'explorer une combinaison des deux approches; L'approche utilisant les coefficients de la série de Fourier est très rapide en raison du petit nombre de \texttt{features}, et l'approche par détection d'objets fonctionne bien pour identifier les anomalies "legères" et les petits pics que TSFresh aurait pu ignorer. Ainsi on pourrait analyser chaque frame avec les coefficients de la série de Fourier, et en fonction du pourcentage de sûreté du résultat, faire passer la frame sur un second filtre par l'approche de détection d'objets.
 
 \renewcommand\refname{7\indent Références}
 \begin{thebibliography}{1}
 \bibitem{odwikipedia} \href{https://en.wikipedia.org/wiki/Object\_detection}{Wikipedia, Object Detection, \texttt{https://en.wikipedia.org/wiki/Object\_detection}}
 \bibitem{pretrainedmodel} \href{https://github.com/tensorflow/models/blob/master/research/object\_detection/g3doc/detection\_model\_zoo.md\#coco-trained-models}{TensorFlow, \textit{models} repository, Tensorflow detection model zoo, \texttt{https://github.com/tensorflow/models/blob/master/research/object\_detection/ \linebreak g3doc/detection\_model\_zoo.md\#coco-trained-models}}
 \bibitem{tsfreshfeatures} \href{https://tsfresh.readthedocs.io/en/latest/text/list\_of\_features.html}{Définition des features calculées par TSFresh, TSFresh documentation, \texttt{https://tsfresh.readthedocs.io/en/latest/text/list\_of\_features.html}}
-\bibitem{relevantfeatures} \href{https://github.com/bondadam/DLRS/blob/master/src/tsfresh\_relevance\_features.csv}{Liste des features calculées par TSFresh retenue pour notre projet sur Github, \texttt{https://github.com/bondadam/DLRS/blob/master/src/tsfresh\_relevance\_features.csv}}
+\bibitem{relevantfeatures} \href{https://github.com/bondadam/DLRS/blob/master/src/tsfresh\_relevance\_features.csv}{Liste des features calculées par TSFresh retenues pour notre projet sur Github, \texttt{https://github.com/bondadam/DLRS/blob/master/src/tsfresh\_relevance\_features.csv}}
 \bibitem{githubproject} \href{https://github.com/bondadam/DLRS}{Projet Deep Learning Real-Time System sur Github \texttt{https://github.com/bondadam/DLRS}}
+\bibitem{sobel} \href{https://fr.wikipedia.org/wiki/Filtre\_de\_Sobel}{Page wikipédia sur le filtre de sobel, \texttt{https://fr.wikipedia.org/wiki/Filtre\_de\_Sobel}}
 \end{thebibliography}
 \clearpage
 

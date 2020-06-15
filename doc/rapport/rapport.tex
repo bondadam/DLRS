@@ -160,7 +160,7 @@
             \item L'ensemble de validation comporte le même nombre d'images pour chacune des deux classes mais des instances différentes de ceux dans l'ensemble l'entraînement.
         \end{itemize}
         Dans la section 5, on explique les résultats qu'on a eu suivant cette approche et pourquoi elle est naïve.
-        \subsection{Génération des features avec TSFresh}
+        \subsection{Extraction des features avec TSFresh}
         Afin d'accompagner nos méthodes de détection d'anomalies, nous avons cherché à trouver des approches permettant de détecter avec succès des anomalies sans devoir nourrir le modèle d'un ensemble de données conséquents, que ce soit des milliers de datapoint au format texte ou une image.
         Nous avons pour cela utilisé une libraire Python appelée TSFresh. TSFresh est un outil spécialement conçu pour analyser des séries temporelles en calculant un grand nombre de caractéristiques communes aux séries temporelles\cite{tsfreshfeatures}. La librairie cherche par exemple les coefficients de la série de fourier representée par le signal (fft\_coefficient), où bien le pourcentage de valeurs qui sont présente plus d'une fois, etc. Une fois ces features calculées, TSFresh utilise chacune des features individuellement en essayant de déterminer son efficacité pour prédire correctement la classification d'une série, et lui assigne une p-value en conséquence. En fonction de cette p-value, un algorithme statistique décide de qualifier cette feature comme pertinente ou non.
         

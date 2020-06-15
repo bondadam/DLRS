@@ -222,7 +222,7 @@
         \end{figure}
         \indent Étant donné que nous avons une version stable d'un système à temps réel ainsi qu'une version avec des anomalies, à l'aide de la librairie de traitement d'images OpenCV nous procédons aux traitements suivants:
         \newline
-        Soit une simulation $S$ d'un système à temps réel commençant à un temps $t$, ayant une durée $d$. On capture la courbe d'état des deux version (stable et avec anomalies) de $t$ à $t+d$ en tant qu'image.
+        Soit une simulation $S$ d'un système à temps réel commençant à un temps $t$, ayant une durée $d$. On capture la courbe d'état des deux version (stable et avec anomalies) de $t$ à $t+d$ en tant qu'image (Figure 6.a et 6.b respectivement).
         \newline
         Soit $M_{stable}$ la matrice de pixel de l'image du système stable capturée, et soit $M_{malfunction}$ la matrice de ce même système mais avec une forte présence d'anomalies.
         L'algorithme est le suivant:
@@ -280,7 +280,7 @@
     \subsection{Approche naïve avec CNN}
     Le choix des hyperparamètres du modèle était directement influencé par la limite de ce que nos machines personnelles peuvent gérer. Le modèle que nous avons choisi produit 33 millions de paramètres (poids du réseau de neurones + bias). Rajouter une couche de plus avec par exemple 128 filtres est impossible en raison d'un manque de mémoire et produit l'exception \textit{ResourceExhausted}.
     \newline
-    \indent Les résultats que nous avons obtenu par cette approche se sont avérés décevants. Le modèle conçu souffrant d'\emph{overfit}. En considérant uniquement les mesures de précision (\emph{accuracy} et \emph{loss}), il peut sembler que le modèle est relativement efficace pour reconnaître les images avec anomalies de celles sans anomalies. En revanche, les résultats sont moins positifs lorsqu'on se conentre sur l'erreur. Ci-dessous les courbes associées à chaque mesure ainsi que leurs corrélations. La fonction de \emph{loss} utilisée est \textit{Binary Cross Entropy} : $BCE = -\dfrac{1}{N} \sum\limits_{y \in Y} y \times log(p(y)) + (1-y) \times log(1-p(y))$.
+    \indent Les résultats que nous avons obtenu par cette approche se sont avérés décevants. Le modèle conçu souffrant d'\emph{overfit}. En considérant uniquement les mesures de précision (\emph{accuracy} et \emph{loss}), il peut sembler que le modèle est relativement efficace pour reconnaître les images avec anomalies de celles sans anomalies. En revanche, les résultats sont moins positifs lorsqu'on se conentre sur l'erreur. Ci-dessous les courbes associées à chaque mesure ainsi que leurs corrélations. La fonction de \emph{loss} utilisée est \textit{Binary Cross Entropy} : $BCE(y, \hat{y}) = -\dfrac{1}{N} \sum\limits_{i=0}^{N} y \times log(p(\hat{y})) + (1-y) \times log(1-p(\hat{y}))$ avec $N=2$ étant le nombre de classes à prédire (malfunction \& stable), $y$ est la valeur de la classe réelle et $\hat{y}$ est la valeur la classe prédite.
     
     \begin{figure}[H]
     \centering
@@ -297,7 +297,7 @@
     \caption{On observe une \emph{accuracy} entre 0.9 et 0.97 pour les ensembles d'images d'entraînement et de validation ainsi qu'une pente de perte descendante et proche de 0 pour les deux aussi.}
     \end{figure}
 
-    La fonction d'erreur utilisé est $MSE = \dfrac{1}{n}\sum\limits_{y \in Y} (y - \hat{y})^2$ avec $\hat{y}=\dfrac{1}{n}\sum\limits_{y \in Y} y$
+    La fonction d'erreur utilisé est $MSE = \dfrac{1}{n}\sum\limits_{y \in Y} (y - \hat{y})^2$ avec $Y$ les valeurs prédites et $\hat{y}$ leurs moyenne.
     
     \begin{figure}[H]
     \centering
@@ -405,17 +405,18 @@
 
 \begin{description}  
 \item [Système à temps réel] Description
-\item [CNN] Description
-\item [TensorFlow] Description
-\item [Epoch] Description
-\item [Batch] Description
+\item [CNN] \textbf{C}onvolutional \textbf{N}eural \textbf{N}etwork, ou Réseau de Neurones Convolutifs est un type de réseau de neurones artificiels utilisé pour la reconnaissance d'images et autres.
+\item [TensorFlow] Une librairie de Deep Learning développé par Google et écrite en Python. Elle abstrait plein de structure de données et fournit des algorithmes liés aux Deep Learning. Cette librairie permet de d'éxecuter des modèles sur le processeur ainsi que la carte graphique.
+\item [Epoch] Un epoch est quand l'ensemble des données d'entraînement passe par le réseau de neurones une seule fois.
+\item [Batch] Passer tout un ensemble de données 
 \item [p-value] Description
-\item [Object Detection] Description
-\item [Bounding box] Description
-\item [csv] Description
-\item [mAP] Description
-\item [fine-tuning] Description
-\item [Overfit] Description
+\item [Object Detection] La détection d'objet est une méthode de reconnaissance d'un objet particulier dans une image.
+\item [Bounding box] Région rectangulaire qui entoure un objet sur une image.
+\item [CSV] \textbf{C}omma-\textbf{s}eperated \textbf{V}alues est un format spécifique regroupant des données tabulaires où chaque valeur dans un échantillon ou une ligne est séparée par une virgule.
+\item [mAP] \textbf{m}ean \textbf{A}verage \textbf{P}recision est une mesure de précision utilisé dans le contexte de la détection d'objets.
+\item [Fine-tuning] Le fine-tuning est une étape d'entraînement qui consiste à recalibrer les poids sur chaque connexion entre deux ou plusieurs neurones suivant l'étape du calcul de loss
+\item [Loss] appelé fonction objectif en français désigne une fonction qui permet de donner une valeur à une solution pour un problème d'optimisation (optimisation des poids du réseau de neurones dans notre cas).
+\item [Overfit] appelé surapprentissage en français désigne le fait qu'un modèle n'arrive pas à généraliser ses prédictions en dehors des données qu'elles lui ont été fournit lors de l'entraînement.
 \end{description}
 
 

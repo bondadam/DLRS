@@ -358,21 +358,21 @@
     \caption{Illustration de la détection d'anomalies sur des images différentes de celles de l'ensemble d'entraînement.}
     \end{figure}
 
-    À l'aide de l'application de surveillance de modèles \textbf{TensorBoard}, on peut extraire quelques métriques en lien avec l'entraînement en temps réel. Cependant, l'application n'expose que des mesures de pertes et d'autres métriques qui ne sont pas documentées. Pour les mesures de perte, nous avons les résultats suivant:
-    
+    À l'aide de l'application de surveillance de modèles \textbf{TensorBoard}, on peut extraire quelques métriques en lien avec l'entraînement en temps réel. Cependant, l'application n'expose que des mesures de pertes et d'autres métriques qui ne sont pas documentées. Pour les mesures de perte, la figure 12 représente ce qu'on a obtenu.
     \begin{figure}[H]
     \centering
-    \begin{subfigure}[t]{0.5\textwidth}
+    \begin{subfigure}[t]{0.49\textwidth}
             \centering
             \includegraphics[width=1\textwidth]{images/od_loc_loss.png}
             \caption{Perte liée à la prédiction des coordonnées des \emph{bounding boxes} qui entourent les anomalies en fonction du nombre d'itérations écoulé.}
     \end{subfigure}%
-    \begin{subfigure}[t]{0.5\textwidth}
+    \hfill
+    \begin{subfigure}[t]{0.49\textwidth}
             \centering
             \includegraphics[width=1\textwidth]{images/od_cla_loss.png}
            	\caption{Perte liée aux prédictions de classification (la partie de l'image entourée présente-t-elle bien une anomalie ?)}
     \end{subfigure}
-    \caption{Illustration de la détection d'anomalies sur des images différentes de celles de l'ensemble d'entraînement.}
+    \caption{Illustration de l'évolution de la fonction objectif/loss/perte sur la détection d'anomalies pendant l'entraînement.}
     \end{figure}
     
     \begin{figure}[H]
@@ -386,7 +386,7 @@
     \end{figure}
     
     
-    La perte de localisation est plus ou moins proche de 0, mais celle de classification est entre 1 et 2 à $15000^{\text{ème}}$ itération. Selon la documentation sur la configuration du modèle, l'\emph{API} précise qu'un nombre d'itérations de $200000$ est recommandé afin d'obtenir une perte entre 0 et 1.
+    La perte de localisation est plus ou moins proche de 0, mais celle de classification est entre 1 et 2 à $15000^{\text{ème}}$ itération. Selon la documentation sur la configuration du modèle, l'\emph{API} précise qu'un nombre d'itérations de $200000$ est recommandé afin d'obtenir une perte entre 0 et 1. Cependant, avec $15000$ itérations, l'entraînement prend $11$ heures. $200000$ itérations prenderont $6$ jours tout en supposant que la machine n'est pas interrompu ou que l'allocation de la mémoire dans la carte graphique ne soit pas possible.
     \newline
     \indent Nous n'avons pas de résultats conclusifs sur la précision et la fidélité du modèle. La perte ne nous donne pas assez d'informations comme on a pu s'en rendre compte dans le modèle CNN naïf. De plus, ni le nombre d'itérations, ni le nombre de données ne sont suffisant pour prendre en considération toutes les formes possibles d'une anomalie. Les avantages de cette approche sont tout de même à prendre en considération. L'\emph{API} de Détection d'Objets de \textit{TensorFlow} n'est pas assez documentée pour faire des expériences plus sophistiquées avec des résultats pertinents et analysables. La migration de la version 1 à la version 2 a donné naissance à plusieurs bugs ainsi que plusieurs modules obsolètes qui demandent des contournements pour fonctionner à nouveau. Il sera peut-être plus judicieux de faire jouer la concurrence et de regarder les résultats qu'on obtient avec une librairie de Deep Learning comme PyTorch qui peut est plus stable et de plus en plus adoptée.
     \newline

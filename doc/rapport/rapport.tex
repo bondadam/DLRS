@@ -434,6 +434,7 @@
     
     Nous avons créé un dépôt pour le code sur \texttt{github}\cite{githubproject}. En parallèle de l'avancement sur le code, nous avons aussi créé un journal de bord que nous avons mis à jour à chaque avancée ou discussion avec notre encadrant. Nous avons choisi d'utiliser \texttt{Jupyter Notebook} pour tester nos approches de deep learning, car ce logiciel permet de tester et d'exécuter des bouts de code de manière modulaire, ce qui permet par exemple de changer en cours de route certains paramètres.
     
+    
     En ce qui concerne la répartition du travail, nous avons tous les deux travaillés sur le simulateur, l'approche naïve et le journal de bord. Adam Bond s'est occupé de l'extraction des features avec TSFresh, tandis que Mohamed-Amine Romdhane a travaillé sur la détection d'anomalies en tant qu'objet.
     
     
@@ -441,9 +442,17 @@
     
     \section{Conclusion}
     Nous avons essayé trois approches différentes de deep-learning pour identifier les anomalies dans les séries temporelles d'un système à temps réel. Parmi ces trois approches, nous avons disqualifié l'approche naïve car ses résultats n'étaient pas satisfaisants.
+    
+    
     En revanche, nous pensons que les deux autres approches ont du potentiel pour résoudre le problème de l'entreprise. L'approche par série temporelle avec extraction de quelques features est peut-être plus efficace et rapide pour un système embarqué, mais l'approche par détection d'objets est plus originale et convient mieux au mode de fonctionnement actuel de l'entreprise.
+    
+    
     Bien sûr, les résultats que nous avons obtenus sont conditionnés à une bonne modélisation des échantillons de données de l'entreprise de notre part. Si certaines hypothèses que nous avons faites par rapport à ces données ne se révélaient pas représentatives, nous ne pourrions pas nous assurer que nos résultats seraient aussi bons. En revanche, nous pensons que nos méthodes nous permettraient d'effectuer un processus similaire, et surtout concernant la détection d'objet, nous estimons que ses résultats sont applicables même si les réelles données de l'entreprise étaient différentes.
+	    
+	    
 	    Parmi les perspectives d'évolutions possibles, nous pensons qu'on pourrait explorer d'autres pré-traitements avant la détection d'objets; par exemple avec un filtre de détection de contours comme le filtre de sobel\cite{sobel}. Pour TSFresh, nous voudrions aussi étudier l'effet du regroupement de différentes features pour trouver une combinaison peut-être encore plus efficace que les N premiers.
+	    
+	    
 	    Enfin, nous pensons qu'il serait intéressant d'explorer une combinaison des deux approches; L'approche utilisant les coefficients de la série de Fourier est très rapide en raison du petit nombre de \texttt{features}, et l'approche par détection d'objets fonctionne bien pour identifier les anomalies "legères" et les petits pics que TSFresh aurait pu ignorer. Ainsi on pourrait analyser chaque frame avec les coefficients de la série de Fourier, et en fonction du pourcentage de sûreté du résultat, faire passer la frame sur un second filtre par l'approche de détection d'objets.
 
 \renewcommand\refname{7\indent Références}

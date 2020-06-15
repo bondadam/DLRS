@@ -100,7 +100,8 @@
     \section{Les données}
     Afin d'obtenir un jeu de données sur lequel entraîner nos modèles, nous avons choisi d'écrire un simulateur se basant sur les données que l'entreprise nous a communiqué. Cet outil se doit d'être modulaire pour nous permettre de générer des données correspondant à la bonne marche d'un senseur ou à une malfonction en prenant en compte autant de facteurs auxquelles l'entreprise est confrontée que possible; par exemple l'amplitude moyenne ou le type de bruit, l'amplitude maximum en fonction des senseurs, la durée de chaque état, ou encore la nature des transitions entre chaque état.
         \subsection{Simulation des données}
-        Le simulateur \textit{simulator.py} simule un système à temps réel, c'est à dire un système qui contrôle un objet (ici les pompes à eau) en modifiant son comportement en temps réel en fonction de nouvelles données. Ainsi la pompe doit commencer à irriguer si elle détecte par exemple que la terre n 'est pas assez humide. En fonction des décisions prises par ce système à temps réel, les résultats enregistrés par le senseur de pression de l'eau vont être modifiés. Afin de modéliser ce système, nous avons utilisés plusieurs variables:
+       
+        Le simulateur \textit{simulator.py} (dont le code se trouve sur github \cite{githubproject}) simule un système à temps réel, c'est à dire un système qui contrôle un objet (ici les pompes à eau) en modifiant son comportement en temps réel en fonction de nouvelles données. Ainsi la pompe doit commencer à irriguer si elle détecte par exemple que la terre n 'est pas assez humide. En fonction des décisions prises par ce système à temps réel, les résultats enregistrés par le senseur de pression de l'eau vont être modifiés. Afin de modéliser ce système, nous avons utilisés plusieurs variables:
         \begin{itemize}[label={•}]
             \item \textbf{realtime\_tick} représente l'écoulement temporel en millisecondes avant l'enregistrement d'un échantillon. Cette variable s'incrémente par \textit{dt\_per\_sample} après chaque échantillon.
             \item \textbf{dt\_per\_sample} est le temps en secondes entre chaque étape de simulation (temps entre deux échantillons).
@@ -109,6 +110,41 @@
             \item \textbf{states} est la liste d'états. Chaque état a une durée, une amplitude, et une liste (vide ou non) d'anomalies (appelées impulsions dans le contexte de simulation). Une \textit{anomalie} a sa propre durée, le temps de son début ainsi que son amplitude.
         \end{itemize}
         \subsection{Génération des données}
+        L'entreprise se sert de flux de données en temps réel représentant les graphiques des séries temporelles qui défilent au cours du temps. Afin de simuler cela, nous avons d'abord commencé par générer des images de nos séries temporelles à l'aide des modules \texttt{seaborn} et \texttt{matplotlib}.
+        
+        Pour générer ces images, nous traçons simplement la courbe de la série temporelle puis nous colorions la partie en dessous pour la rendre plus facilement identifiable par une machine (et correspondre aux images de l'entreprise). Une fois cela fait, nous enlevons les axes, les légendes et autre labels. Afin de correspondre aux flux de l'entreprise qui ne sont  qu'une image de la courbe d'un moment à un autre, et non du départ, nous avons implémenté deux attributes: \texttt{scale} et \texttt{offset}. Le premier indique combien de temps une image du graphique doit couvrir, et le second à partir de quand elle doit commencer. Avec ces deux attributs, nous avons généré des suites d'images avec un \texttt{scale} fixe et un \texttt{offset} croissant qui correspondent aux \emph{frames} d'une vidéo.
+        
+        
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.5\textwidth]{images/scaleoffset.png}
+            \caption{Exemple de graphique généré avec \texttt{seaborn}, où \texttt{scale = 2000 et offset = 2000}}
+            \label{}
+        \end{figure}
+        
+        \begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.45\textwidth}
+            \centering
+            \includegraphics[width=.75\linewidth]{images/frame1.png}
+            \caption{Frame 1 d'une série avec \texttt{offset} croissant, avec tous les labels supprimés}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.45\textwidth}
+            \centering
+           \includegraphics[width=.75\linewidth]{images/frame35.png}
+            \caption{Frame 35 de la même série.}
+    \end{subfigure}
+    \caption{Exemples de frames générés par notre simulateur.}
+\end{figure}
+
+        
+        Comme nous avons implémenté un générateur d'impulsions aléatoires, nous pouvons lancer la génération d'un grand nombre d'images, triées dans les classe \texttt{stable} et \texttt{malfunction} en fonction de l'activation du générateur. Le processus est répété pour obtenir des images d'entraînement et de test et permet de facilement obtenir un dataset équilibré.
+        
+        Afin d'extraire les \texttt{features} dans TSFresh (voir partie 4.2), nous avons aussi implémenté un générateur de fichiers \emph{csv}. Celui ci génère un grand nombre de séries temporelles et les stocke au format \texttt{id \/ time \/ value} où l'\texttt{id} est le numéro de la série temporelle, et \texttt{time \& value} sont les valeurs de la série temporelle à un moment T. On génère aussi un autre fichier où l'on stocke le numéro de la série et sa valeur (malfonction ou stable) pour pouvoir les identifier lors de l'entraînement et des tests de nos arbres de décision.
+        
+        
+        
+        
     \section{Deep Learning avec TensorFlow}
         \subsection{Approche naïve avec CNN}
        En premier lieu nous avons essayé d'utiliser le réseau neuronal convolutif de TensorFlow (convolutional neural networks, abbrv: cnn) pour l'entraîner à reconnaître les images provenant d'un système stable ainsi qu'un système à forte perturbations admettant plusieurs anomalies. Nous avons essayé de l'entraîner sur des images car c'est comme que cela que ça fonctionne actuellement dans l'entreprise; un employé regarde défiler les courbes à la recherche de malfonctions. Nous avons précédemment généré 1000 images pour chacune de nos classes \textbf{stable} et \textbf{malfunction}, nous les avons alors importées pour être pré-traitées avant de les brancher au réseau.
@@ -177,7 +213,7 @@
             \label{}
         \end{figure}
         
-        
+      
         Nous avons d'abord tenté de réaliser cette analyse sur une matrice de pixels représentant l'image. Ainsi à chaque moment T équivaut une colonne de pixels blancs ou rouge, tous les pixels inférieurs à la valeur de l'amplitude étant coloriés en rouge et les autres laissés blancs. Nous avons rapidement abandonné cette idée puisqu'en plus de ne pas apporter plus d'informations par rapport à une simple série où équivaut à chaque moment T une valeur d'amplitude, elle apporte énormément d'informations superflues que TSFresh doit trier, et qui ralentissent le processus et rendent les résultats moins efficaces. Nous avons donc implémenté dans le simulateur un moyen d'exporter dans un fichier texte de nombreuses séries générées aléatoirement et identifiées selon si elles présentent des anomalies ou non.
         
         Une fois cela réalisé, nous avons donné les 1024 séries résultantes au logiciel pour calculer les coefficients. TSFresh a calculé plus de 800 features, dont il a considéré 305 commes pertinentes.
@@ -189,7 +225,7 @@
             \label{}
         \end{figure}
 
-        Parmi les 305 features, plus de la moitié étaient des coefficients d'une transformée de Fourier, et 48 parmi les 50 premières. Comme on peut le voir sur la table, les premières features et particulièrement la toute première, ont des p-value extrêmement basses, un ordre de grandeur plus petites que les suivantes.
+        Parmi les 305 features, plus de la moitié étaient des coefficients d'une transformée de Fourier, et 48 parmi les 50 premières. Comme on peut le voir sur la table, les premières features et particulièrement la toute première, ont des p-value extrêmement basses, un ordre de grandeur plus petites que les suivantes. Les données complètes des \emph{features} retenues sont disponibles dans le fichier \texttt{tsfresh\_relevance\_features.csv}\cite{relevantfeatures}.
         
         Nous avons vérifié la pertinence de ces features en entraînant deux arbres de décision pour classer les séries temporelles en entrée dans deux classes : stable et malfonction.
         
@@ -222,7 +258,7 @@
         \end{figure}
         \indent Étant donné que nous avons une version stable d'un système à temps réel ainsi qu'une version avec des anomalies, à l'aide de la librairie de traitement d'images OpenCV nous procédons aux traitements suivants:
         \newline
-        Soit une simulation $S$ d'un système à temps réel commençant à un temps $t$, ayant une durée $d$. On capture la courbe d'état des deux version (stable et avec anomalies) de $t$ à $t+d$ en tant qu'image (Figure 6.a et 6.b respectivement).
+        Soit une simulation $S$ d'un système à temps réel commençant à un temps $t$, ayant une durée $d$. On capture la courbe d'état des deux version (stable et avec anomalies) de $t$ à $t+d$ en tant qu'image (Figure 6.a et 6.b respectivement)..
         \newline
         Soit $M_{stable}$ la matrice de pixel de l'image du système stable capturée, et soit $M_{malfunction}$ la matrice de ce même système mais avec une forte présence d'anomalies.
         L'algorithme est le suivant:
@@ -297,7 +333,7 @@
     \caption{On observe une \emph{accuracy} entre 0.9 et 0.97 pour les ensembles d'images d'entraînement et de validation ainsi qu'une pente de perte descendante et proche de 0 pour les deux aussi.}
     \end{figure}
 
-    La fonction d'erreur utilisé est $MSE = \dfrac{1}{n}\sum\limits_{y \in Y} (y - \hat{y})^2$ avec $Y$ les valeurs prédites et $\hat{y}$ leurs moyenne.
+   	La fonction d'erreur utilisé est $MSE = \dfrac{1}{n}\sum\limits_{y \in Y} (y - \hat{y})^2$ avec $Y$ les valeurs prédites et $\hat{y}$ leurs moyenne.
     
     \begin{figure}[H]
     \centering
@@ -358,7 +394,8 @@
     \caption{Illustration de la détection d'anomalies sur des images différentes de celles de l'ensemble d'entraînement.}
     \end{figure}
 
-    À l'aide de l'application de surveillance de modèles \textbf{TensorBoard}, on peut extraire quelques métriques en lien avec l'entraînement en temps réel. Cependant, l'application n'expose que des mesures de pertes et d'autres métriques qui ne sont pas documentées. Pour les mesures de perte, la figure 12 représente ce qu'on a obtenu.
+    À l'aide de l'application de surveillance de modèles \textbf{TensorBoard}, on peut extraire quelques métriques en lien avec l'entraînement en temps réel. Cependant, l'application n'expose que des mesures de pertes et d'autres métriques qui ne sont pas documentées. Pour les mesures de perte, la figure 12 illustre les résultats que nous avons obtenus:
+    
     \begin{figure}[H]
     \centering
     \begin{subfigure}[t]{0.49\textwidth}
@@ -372,7 +409,7 @@
             \includegraphics[width=1\textwidth]{images/od_cla_loss.png}
            	\caption{Perte liée aux prédictions de classification (la partie de l'image entourée présente-t-elle bien une anomalie ?)}
     \end{subfigure}
-    \caption{Illustration de l'évolution de la fonction objectif/loss/perte sur la détection d'anomalies pendant l'entraînement.}
+	\caption{Illustration de l'évolution de la fonction objectif/loss/perte sur la détection d'anomalies pendant l'entraînement.}
     \end{figure}
     
     \begin{figure}[H]
@@ -386,7 +423,8 @@
     \end{figure}
     
     
-    La perte de localisation est plus ou moins proche de 0, mais celle de classification est entre 1 et 2 à $15000^{\text{ème}}$ itération. Selon la documentation sur la configuration du modèle, l'\emph{API} précise qu'un nombre d'itérations de $200000$ est recommandé afin d'obtenir une perte entre 0 et 1. Cependant, avec $15000$ itérations, l'entraînement prend $11$ heures. $200000$ itérations prenderont $6$ jours tout en supposant que la machine n'est pas interrompu ou que l'allocation de la mémoire dans la carte graphique ne soit pas possible.
+    La perte de localisation est plus ou moins proche de 0, mais celle de classification est entre 1 et 2 à $15000^{\text{ème}}$ itération. Selon la documentation sur la configuration du modèle, l'\emph{API} précise qu'un nombre d'itérations de $200000$ est recommandé afin d'obtenir une perte entre 0 et 1. Cependant, avec $15000$ itérations, l'entraînement prend $11$ heures. $200000$ itérations prendront $6$ jours tout en supposant que la machine ne soit pas interrompue ou que l'allocation de la mémoire dans la carte graphique ne soit pas possible.
+    \newline
     \newline
     \indent Nous n'avons pas de résultats conclusifs sur la précision et la fidélité du modèle. La perte ne nous donne pas assez d'informations comme on a pu s'en rendre compte dans le modèle CNN naïf. De plus, ni le nombre d'itérations, ni le nombre de données ne sont suffisant pour prendre en considération toutes les formes possibles d'une anomalie. Les avantages de cette approche sont tout de même à prendre en considération. L'\emph{API} de Détection d'Objets de \textit{TensorFlow} n'est pas assez documentée pour faire des expériences plus sophistiquées avec des résultats pertinents et analysables. La migration de la version 1 à la version 2 a donné naissance à plusieurs bugs ainsi que plusieurs modules obsolètes qui demandent des contournements pour fonctionner à nouveau. Il sera peut-être plus judicieux de faire jouer la concurrence et de regarder les résultats qu'on obtient avec une librairie de Deep Learning comme PyTorch qui peut est plus stable et de plus en plus adoptée.
     \newline
@@ -395,21 +433,23 @@
 
 \renewcommand\refname{7\indent Références}
 \begin{thebibliography}{1}
-\bibitem{odwikipedia} \href{https://en.wikipedia.org/wiki/Object\_detection}{Wikipedia, Object Detection}
-\bibitem{pretrainedmodel} \href{https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md#coco-trained-models}{TensorFlow, \textit{models} repository, Tensorflow detection model zoo.}
-\bibitem{tsfreshfeatures} \href{https://tsfresh.readthedocs.io/en/latest/text/list_of_features.html}{Liste des features calculées par TSFresh, TSFresh documentation}
+\bibitem{odwikipedia} \href{https://en.wikipedia.org/wiki/Object\_detection}{Wikipedia, Object Detection, \texttt{https://en.wikipedia.org/wiki/Object\_detection}}
+\bibitem{pretrainedmodel} \href{https://github.com/tensorflow/models/blob/master/research/object\_detection/g3doc/detection\_model\_zoo.md\#coco-trained-models}{TensorFlow, \textit{models} repository, Tensorflow detection model zoo, \texttt{https://github.com/tensorflow/models/blob/master/research/object\_detection/ \linebreak g3doc/detection\_model\_zoo.md\#coco-trained-models}}
+\bibitem{tsfreshfeatures} \href{https://tsfresh.readthedocs.io/en/latest/text/list\_of\_features.html}{Définition des features calculées par TSFresh, TSFresh documentation, \texttt{https://tsfresh.readthedocs.io/en/latest/text/list\_of\_features.html}}
+\bibitem{relevantfeatures} \href{https://github.com/bondadam/DLRS/blob/master/src/tsfresh\_relevance\_features.csv}{Liste des features calculées par TSFresh retenue pour notre projet sur Github, \texttt{https://github.com/bondadam/DLRS/blob/master/src/tsfresh\_relevance\_features.csv}}
+\bibitem{githubproject} \href{https://github.com/bondadam/DLRS}{Projet Deep Learning Real-Time System sur Github \texttt{https://github.com/bondadam/DLRS}}
 \end{thebibliography}
 \clearpage
 
 \section*{Glossaire}
 
 \begin{description}  
-\item [Système à temps réel] Description
+\item [Système à temps réel] Un système qui doit prendre des décisions pour contrôler un processus sous contrainte de temps.
 \item [CNN] \textbf{C}onvolutional \textbf{N}eural \textbf{N}etwork, ou Réseau de Neurones Convolutifs est un type de réseau de neurones artificiels utilisé pour la reconnaissance d'images et autres.
 \item [TensorFlow] Une librairie de Deep Learning développé par Google et écrite en Python. Elle abstrait plein de structure de données et fournit des algorithmes liés aux Deep Learning. Cette librairie permet de d'éxecuter des modèles sur le processeur ainsi que la carte graphique.
 \item [Epoch] Un epoch est quand l'ensemble des données d'entraînement passe par le réseau de neurones une seule fois.
 \item [Batch] Passer tout un ensemble de données 
-\item [p-value] Description
+\item [p-value] La p-value est la probabilité de faire une erreur en rejetant l'hypothèse nulle, qui est l'hypothèse qui suppose que deux paramètres statistiques issus de deux échantillons différent sont égaux. Plus la p-value est faible, plus l'hypothèse alternative est probable.
 \item [Object Detection] La détection d'objet est une méthode de reconnaissance d'un objet particulier dans une image.
 \item [Bounding box] Région rectangulaire qui entoure un objet sur une image.
 \item [CSV] \textbf{C}omma-\textbf{s}eperated \textbf{V}alues est un format spécifique regroupant des données tabulaires où chaque valeur dans un échantillon ou une ligne est séparée par une virgule.

@@ -101,7 +101,7 @@
     Afin d'obtenir un jeu de données sur lequel entraîner nos modèles, nous avons choisi d'écrire un simulateur se basant sur les données que l'entreprise nous a communiqué. Cet outil se doit d'être modulaire pour nous permettre de générer des données correspondant à la bonne marche d'un senseur ou à une malfonction en prenant en compte autant de facteurs auxquels l'entreprise est confrontée que possible; par exemple l'amplitude moyenne ou le type de bruit, l'amplitude maximum en fonction des senseurs, la durée de chaque état, ou encore la nature des transitions entre chaque état.
         \subsection{Simulation des données}
        
-        Le simulateur \textit{simulator.py} (dont le code se trouve sur github \cite{githubproject}) simule un système à temps réel, c'est à dire un système qui contrôle un objet (ici les pompes à eau) en modifiant son comportement en temps réel en fonction de nouvelles données. Ainsi la pompe doit commencer à irriguer si elle détecte par exemple que la terre n 'est pas assez humide. En fonction des décisions prises par ce système à temps réel, les résultats enregistrés par le senseur de pression de l'eau vont être modifiés. Afin de modéliser ce système, nous avons utilisés plusieurs variables:
+        Le simulateur \textit{simulator.py} simule un système à temps réel, c'est à dire un système qui contrôle un objet (ici les pompes à eau) en modifiant son comportement en temps réel en fonction de nouvelles données. Ainsi la pompe doit commencer à irriguer si elle détecte par exemple que la terre n 'est pas assez humide. En fonction des décisions prises par ce système à temps réel, les résultats enregistrés par le senseur de pression de l'eau vont être modifiés. Afin de modéliser ce système, nous avons utilisés plusieurs variables:
         \begin{itemize}[label={•}]
             \item \textbf{realtime\_tick} représente l'écoulement temporel en millisecondes avant l'enregistrement d'un échantillon. Cette variable s'incrémente par \textit{dt\_per\_sample} après chaque échantillon.
             \item \textbf{dt\_per\_sample} est le temps en secondes entre chaque étape de simulation (temps entre deux échantillons).
@@ -225,7 +225,7 @@
             \label{}
         \end{figure}
 
-        Parmi les 305 features, plus de la moitié étaient des coefficients d'une transformée de Fourier, et 48 parmi les 50 premières. Comme on peut le voir sur la table, les premières features et particulièrement la toute première, ont des p-value extrêmement basses, un ordre de grandeur plus petites que les suivantes. Les données complètes des \emph{features} retenues sont disponibles dans le fichier \texttt{tsfresh\_relevance\_features.csv}\cite{relevantfeatures}.
+        Parmi les 305 features, plus de la moitié étaient des coefficients d'une transformée de Fourier, et 48 parmi les 50 premières. Comme on peut le voir sur la table, les premières features et particulièrement la toute première, ont des p-value extrêmement basses, un ordre de grandeur plus petites que les suivantes. Les données complètes des \emph{features} retenues sont disponibles dans le fichier \texttt{tsfresh\_relevance\_features.csv}.
         
         Nous avons vérifié la pertinence de ces features en entraînant deux arbres de décision pour classer les séries temporelles en entrée dans deux classes : stable et malfonction.
         
@@ -317,17 +317,16 @@
     Le choix des hyperparamètres du modèle était directement influencé par la limite de ce que nos machines personnelles peuvent gérer. Le modèle que nous avons choisi produit 33 millions de paramètres (poids du réseau de neurones + bias). Rajouter une couche de plus avec par exemple 128 filtres est impossible en raison d'un manque de mémoire et produit l'exception \textit{ResourceExhausted}.
     \newline
     \indent Les résultats que nous avons obtenus par cette approche se sont avérés décevants. Le modèle conçu souffrant d'\emph{overfit}. En considérant uniquement les mesures de précision (\emph{accuracy} et \emph{loss}), il peut sembler que le modèle est relativement efficace pour reconnaître les images avec anomalies de celles sans anomalies. En revanche, les résultats sont moins positifs lorsqu'on se concentre sur l'erreur. Ci-dessous les courbes associées à chaque mesure ainsi que leurs corrélations. La fonction de \emph{loss} utilisée est \textit{Binary Cross Entropy} : $BCE(y, \hat{y}) = -\dfrac{1}{N} \sum\limits_{i=0}^{N} y \times log(p(\hat{y})) + (1-y) \times log(1-p(\hat{y}))$ avec $N=2$ étant le nombre de classes à prédire (malfunction \& stable), $y$ est la valeur de la classe réelle et $\hat{y}$ est la valeur de la classe prédite.
-    
     \begin{figure}[H]
     \centering
     \begin{subfigure}[t]{0.5\textwidth}
             \centering
-            \includegraphics[width=0.5\linewidth]{images/cnn_acc_loss_1.png}
+            \includegraphics[width=0.4\linewidth]{images/cnn_acc_loss_1.png}
             \caption{\emph{Accuracy} par rapport au nombre d'\emph{epochs}}
     \end{subfigure}%
     \begin{subfigure}[t]{0.5\textwidth}
             \centering
-            \includegraphics[width=0.5\linewidth]{images/cnn_acc_loss_2.png}
+            \includegraphics[width=0.4\linewidth]{images/cnn_acc_loss_2.png}
             \caption{\emph{Loss} par rapport au nombre d'\emph{epochs}}
     \end{subfigure}
     \caption{On observe une \emph{accuracy} entre 0.9 et 0.97 pour les ensembles d'images d'entraînement et de validation ainsi qu'une pente de perte descendante et proche de 0 pour les deux aussi.}
@@ -432,7 +431,7 @@
     
     \section{Gestion de Projet}
     
-    Nous avons créé un dépôt pour le code sur \texttt{github}\cite{githubproject}. En parallèle de l'avancement sur le code, nous avons aussi créé un journal de bord que nous avons mis à jour à chaque avancée ou discussion avec notre encadrant. Nous avons choisi d'utiliser \texttt{Jupyter Notebook} pour tester nos approches de deep learning, car ce logiciel permet de tester et d'exécuter des bouts de code de manière modulaire, ce qui permet par exemple de changer en cours de route certains paramètres.
+    Nous avons créé un dépôt pour le code sur \texttt{github}. Le dépôt est privé pour des raisons de confidentialité vis à vis de l'entreprise. En parallèle de l'avancement sur le code, nous avons aussi créé un journal de bord que nous avons mis à jour à chaque avancée ou discussion avec notre encadrant. Nous avons choisi d'utiliser \texttt{Jupyter Notebook} pour tester nos approches de deep learning, car ce logiciel permet de tester et d'exécuter des bouts de code de manière modulaire, ce qui permet par exemple de changer en cours de route certains paramètres.
     
     
     En ce qui concerne la répartition du travail, nous avons tous les deux travaillés sur le simulateur, l'approche naïve et le journal de bord. Adam Bond s'est occupé de l'extraction des features avec TSFresh, tandis que Mohamed-Amine Romdhane a travaillé sur la détection d'anomalies en tant qu'objet.
@@ -450,23 +449,25 @@
     Bien sûr, les résultats que nous avons obtenus sont conditionnés à une bonne modélisation des échantillons de données de l'entreprise de notre part. Si certaines hypothèses que nous avons faites par rapport à ces données ne se révélaient pas représentatives, nous ne pourrions pas nous assurer que nos résultats seraient aussi bons. En revanche, nous pensons que nos méthodes nous permettraient d'effectuer un processus similaire, et surtout concernant la détection d'objet, nous estimons que ses résultats sont applicables même si les réelles données de l'entreprise étaient différentes.
 	    
 	    
-	    Parmi les perspectives d'évolutions possibles, nous pensons qu'on pourrait explorer d'autres pré-traitements avant la détection d'objets; par exemple avec un filtre de détection de contours comme le filtre de sobel\cite{sobel}. Pour TSFresh, nous voudrions aussi étudier l'effet du regroupement de différentes features pour trouver une combinaison peut-être encore plus efficace que les N premiers.
+	    Parmi les perspectives d'évolutions possibles, nous pensons qu'on pourrait explorer d'autres pré-traitements avant la détection d'objets; par exemple avec un filtre de détection de contours comme le filtre de Sobel\cite{sobel}. Pour TSFresh, nous voudrions aussi étudier l'effet du regroupement de différentes features pour trouver une combinaison peut-être encore plus efficace que les N premiers.
 	    
 	    
 	    Enfin, nous pensons qu'il serait intéressant d'explorer une combinaison des deux approches; L'approche utilisant les coefficients de la série de Fourier est très rapide en raison du petit nombre de \texttt{features}, et l'approche par détection d'objets fonctionne bien pour identifier les anomalies "legères" et les petits pics que TSFresh aurait pu ignorer. Ainsi on pourrait analyser chaque frame avec les coefficients de la série de Fourier, et en fonction du pourcentage de sûreté du résultat, faire passer la frame sur un second filtre par l'approche de détection d'objets.
 
-\renewcommand\refname{7\indent Références}
+
+\section{Références} 
+\begingroup
+\renewcommand{\section}[2]{}%
 \begin{thebibliography}{1}
 \bibitem{odwikipedia} \href{https://en.wikipedia.org/wiki/Object\_detection}{Wikipedia, Object Detection, \texttt{https://en.wikipedia.org/wiki/Object\_detection}}
 \bibitem{pretrainedmodel} \href{https://github.com/tensorflow/models/blob/master/research/object\_detection/g3doc/detection\_model\_zoo.md\#coco-trained-models}{TensorFlow, \textit{models} repository, Tensorflow detection model zoo, \texttt{https://github.com/tensorflow/models/blob/master/research/object\_detection/ \linebreak g3doc/detection\_model\_zoo.md\#coco-trained-models}}
 \bibitem{tsfreshfeatures} \href{https://tsfresh.readthedocs.io/en/latest/text/list\_of\_features.html}{Définition des features calculées par TSFresh, TSFresh documentation, \texttt{https://tsfresh.readthedocs.io/en/latest/text/list\_of\_features.html}}
-\bibitem{relevantfeatures} \href{https://github.com/bondadam/DLRS/blob/master/src/tsfresh\_relevance\_features.csv}{Liste des features calculées par TSFresh retenues pour notre projet sur Github, \texttt{https://github.com/bondadam/DLRS/blob/master/src/tsfresh\_relevance\_features.csv}}
-\bibitem{githubproject} \href{https://github.com/bondadam/DLRS}{Projet Deep Learning Real-Time System sur Github \texttt{https://github.com/bondadam/DLRS}}
 \bibitem{sobel} \href{https://fr.wikipedia.org/wiki/Filtre\_de\_Sobel}{Page wikipédia sur le filtre de sobel, \texttt{https://fr.wikipedia.org/wiki/Filtre\_de\_Sobel}}
 \end{thebibliography}
+\endgroup
 \clearpage
 
-\section*{Glossaire}
+\section{Glossaire}
 
 \begin{description}  
 \item [Système à temps réel] Un système qui doit prendre des décisions pour contrôler un processus sous contrainte de temps.

@@ -277,7 +277,7 @@
             \label{}
         \end{figure}
 
-        Parmi les 305 features, plus de la moitié étaient des coefficients d'une transformée de Fourier, et 48 parmi les 50 premières. Comme on peut le voir sur la table, les premières features et particulièrement la toute première, ont des p-value extrêmement basses, un ordre de grandeur plus petites que les suivantes. Les données complètes des \emph{features} retenues sont disponibles dans le fichier \texttt{tsfresh\_relevance\_features.csv}.
+        Parmi les 305 features, plus de la moitié étaient des coefficients d'une transformée de Fourier, et 48 parmi les 50 premières. Comme on peut le voir sur la table, les premières features et particulièrement la toute première, ont des p-value extrêmement basses, plusieurs ordres de grandeur plus petites que les suivantes. Les données complètes des \emph{features} retenues sont disponibles dans le fichier \texttt{tsfresh\_relevance\_features.csv}.
         
         Nous avons vérifié la pertinence de ces features en entraînant deux arbres de décision pour classer les séries temporelles en entrée dans deux classes : stable et malfonction.
         
@@ -418,11 +418,11 @@
         
         En revanche, lorsque des malfonctions sont présentes dans une série, elles génèrent de plus nombreux pics haut et bas d'amplitudes à intervalles irréguliers. Ces nombreux pics empêchent d'obtenir une image relativement proche de notre courbe uniquement avec les coefficients de basse fréquence de la série de Fourier. C'est donc un indicateur simple permettant de déterminer si une série temporelle représentant la pression des senseurs présente des malfonctions ou non.
         
-        Il faut cependant considérer que cela est vrai à condition que l'hypothèse que nous avions faite dans notre simulateur en fonction des données réelles auxquelles nous avons rapidement eu accès se vérifie: Les périodes des états actifs et au repos sont relativement stables. En effet, il est beaucoup plus difficile d'approximer un signal carré irrégulier avec seulement quelques coefficients d'une série de Fourier. De plus, il devient alors difficile de dissocier des pics dus à des malfonctions de simples changements d'états anticipés.
+        Il faut cependant considérer que cela est vrai à condition que l'hypothèse que nous avions faite dans notre simulateur se vérifie: Les périodes des états actifs et au repos sont relativement régulières. En effet, il est beaucoup plus difficile d'approximer un signal carré irrégulier avec seulement quelques coefficients d'une série de Fourier. De plus, il devient alors difficile de dissocier des pics dus à des malfonctions de simples changements d'états anticipés.
         
-    Un autre aspect est que bien que nous ayons trié les features en fonction de leur pouvoir prédictif, ces tests se font de façon individuelle sur chacune des features. Or on ne peut pas exclure que certaines features soient plus ou moins efficaces dans certaines combinaisons. Ainsi, pour être sûr d'avoir l'ensemble réduit de N features le plus efficace, il faudrait tester toutes les permutations possibles et non seulement les N premiers, ce que nous n'avons pas fait pour des raisons de temps de calcul.
+    Un autre aspect est que bien que nous ayons trié les features en fonction de leur pouvoir prédictif, ces tests se font de façon individuelle sur chacune des features. Or on ne peut pas exclure que certaines features soient plus ou moins efficaces dans certaines combinaisons. Ainsi, pour être sûr d'avoir l'ensemble réduit de N features le plus efficace, il faudrait tester toutes les permutations possibles et non seulement les N premières, ce que nous n'avons pas fait pour des raisons de temps de calcul.
     
-    Enfin, bien que nous ayons tenté de limiter l'\emph{overfit} autant que possible, en l'absence d'un jeu de données réel conséquent fourni par la société, nous ne pouvons être confiants de nos résultats uniquement sur les séries temporelles générées par notre simulateur.
+    Enfin, bien que nous ayons tenté de limiter l'\emph{overfit} autant que possible, en l'absence d'un jeu de données réel conséquent fourni par la société, comme pour toutes les approches, l'efficacité de nos solutions sur un cas réel dépend de la qualité de nos modélisations.
         
         
     \subsection{Détection d'anomalies en tant qu'objets}
@@ -495,7 +495,7 @@
     Nous avons essayé trois approches différentes de deep-learning pour identifier les anomalies dans les séries temporelles d'un système à temps réel. Parmi ces trois approches, nous avons disqualifié l'approche naïve car ses résultats n'étaient pas satisfaisants.
     
     
-    En revanche, nous pensons que les deux autres approches ont du potentiel pour résoudre le problème de l'entreprise. L'approche par série temporelle avec extraction de quelques features est peut-être plus efficace et rapide pour un système embarqué, mais l'approche par détection d'objets est plus originale et convient mieux au mode de fonctionnement actuel de l'entreprise.
+    En revanche, nous pensons que les deux autres approches ont du potentiel pour résoudre le problème de l'entreprise. L'approche par série temporelle avec extraction de quelques features est plus efficace et rapide et donc adaptée à un système embarqué, mais l'approche par détection d'objets est plus originale, convient mieux au mode de fonctionnement actuel de l'entreprise, et peut identifier des pics que la première approche ne repèrerait pas.
     
     
     Bien sûr, les résultats que nous avons obtenus sont conditionnés à une bonne modélisation des échantillons de données de l'entreprise de notre part. Si certaines hypothèses que nous avons faites par rapport à ces données ne se révélaient pas représentatives, nous ne pourrions pas nous assurer que nos résultats seraient aussi bons. En revanche, nous pensons que nos méthodes nous permettraient d'effectuer un processus similaire, et surtout concernant la détection d'objet, nous estimons que ses résultats sont applicables même si les réelles données de l'entreprise étaient différentes.
